@@ -38,6 +38,22 @@ DEFAULT_TIMEOUT = 3
 _LOGGER = logging.getLogger(__name__)
 
 
+def retry(method, retries=3):
+    method_name = method.__name__
+
+    def _wrap(self, *args, **kwargs):
+        for retry in range(retries):
+            try:
+                method(self, *args, **kwargs)
+                break
+            except BTLEException as ex:
+                _LOGGER.error("%s failed on %s retry: %s", method_name, retry + 1, ex)
+                if retry == retries:
+                    raise ex
+
+    return _wrap
+
+
 class ScanDelegate(DefaultDelegate):
     def handleDiscovery(self, dev, isNewDev, isNewData):
         if isNewDev:
@@ -55,53 +71,53 @@ class BTLEScanner:
         try:
             self.scanner.scan(self.timeout, passive=True)
         except BTLEException as ex:
-            logging.error("Unable to scan for devices, did you set-up permissions for bluepy-helper correctly? ex: %s" % ex)
+            logging.error("Unable to scan, did you set-up permissions for bluepy-helper correctly? ex: %s" % ex)
 
 
-class BTLEConnection(DefaultDelegate):
-    """Representation of a BTLE Connection."""
+class BTLEPeripheral(DefaultDelegate):
+    """Representation of a BTLE Peripheral."""
 
     def __init__(self, mac):
-        """Initialize the connection."""
+        """Initialize the Peripheral."""
         DefaultDelegate.__init__(self)
-
-        self._conn = Peripheral()
-        self._conn.withDelegate(self)
+        self._peripheral = Peripheral().withDelegate(self)
         self._mac = mac
         self._callbacks = {}
 
-    def connect(self, max_retries=3):
+    @retry
+    def connect(self):
         _LOGGER.info("Trying to connect to %s", self._mac)
-        for retry in range(max_retries):
-            try:
-                self._conn.connect(self._mac)
-                break
-            except BTLEException as ex:
-                _LOGGER.info("Unable to connect to device %s on %s retry: %s", self._mac, retry+1, ex)
-                if retry == max_retries:
-                    raise
-
+        self._peripheral.connect(self._mac)
         _LOGGER.info("Connected to %s", self._mac)
+        # for retry in range(max_retries):
+        #     try:
+        #         self._peripheral.connect(self._mac)
+        #         break
+        #     except BTLEException as ex:
+        #         _LOGGER.info("Unable to connect to device %s on %s retry: %s", self._mac, retry+1, ex)
+        #         if retry == max_retries:
+        #             raise
 
     def disconnect(self):
-        if self._conn:
-            self._conn.disconnect()
-            self._conn = None
+        if self._peripheral:
+            self._peripheral.disconnect()
+            self._peripheral = None
 
     def wait(self, sec):
         end = time.time() + sec
         while time.time() < end:
-            self._conn.waitForNotifications(timeout=0.1)
+            self._peripheral.waitForNotifications(timeout=0.1)
 
     def get_services(self):
-        return self._conn.getServices()
+        return self._peripheral.getServices()
 
     def get_characteristics(self, uuid=None):
         if uuid:
             _LOGGER.info("Requesting characteristics for uuid %s", uuid)
-            return self._conn.getCharacteristics(uuid=uuid)
-        return self._conn.getCharacteristics()
+            return self._peripheral.getCharacteristics(uuid=uuid)
+        return self._peripheral.getCharacteristics()
 
+    # implements DefaultDelegate handleNotification method
     def handleNotification(self, handle, data):
         """Handle Callback from a Bluetooth (GATT) request."""
         _LOGGER.debug("Got notification from %s: %s", handle, codecs.encode(data, 'hex'))
@@ -117,10 +133,11 @@ class BTLEConnection(DefaultDelegate):
         """Set the callback for a Notification handle. It will be called with the parameter data, which is binary."""
         self._callbacks[handle] = function
 
-    def make_request(self, handle, value, timeout=0, with_response=False):
+    @retry
+    def write_characteristic(self, handle, value, timeout=0, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
         _LOGGER.debug("Writing %s to %s with with_response=%s", codecs.encode(value, 'hex'), handle, with_response)
-        res = self._conn.writeCharacteristic(handle, value, withResponse=with_response)
+        res = self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)
         if timeout:
             self.wait(timeout)
         return res

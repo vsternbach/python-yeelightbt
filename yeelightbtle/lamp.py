@@ -3,7 +3,7 @@ import codecs
 import logging
 import time
 import threading
-from .btle import BTLEConnection
+from .btle import BTLEPeripheral
 from .structures import Request, Response, StateResult
 
 _LOGGER = logging.getLogger(__name__)
@@ -12,7 +12,6 @@ _LOGGER = logging.getLogger(__name__)
 def cmd(cmd):
     def _wrap(self, *args, **kwargs):
         req = cmd(self, *args, **kwargs)
-
         params = None
         wait = self._wait_after_call
         if isinstance(req, tuple):
@@ -27,36 +26,40 @@ def cmd(cmd):
             query["payload"] = params
 
         _LOGGER.debug(">> %s (wait: %s)", query, wait)
-        _ex = None
-        try_count = 3
-        while try_count > 0:
-            try:
-                request_bytes = Request.build(query)
-                _LOGGER.debug(">> %s (wait: %s)")
-                res = self.control_char.write(request_bytes, withResponse=True)
-                self._conn.wait(wait)
-                return res
-            except Exception as ex:
-                _LOGGER.error("got exception on %s, tries left %s: %s", query, try_count, ex)
-                raise
-                _LOGGER.debug("cmd: after raise")
-                _ex = ex
-                try_count -= 1
-                self.connect()
-                continue
-        raise _ex
+        res = self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query), timeout=None, withResponse=True)
+        self._dev.wait(wait)
+        return res
+        # _ex = None
+        # try_count = 3
+        # while try_count > 0:
+        #     try:
+        #         request_bytes = Request.build(query)
+        #         _LOGGER.debug(">> %s (wait: %s)")
+        #         res = self.control_char.write(request_bytes, withResponse=True)
+        #         self._conn.wait(wait)
+        #         return res
+        #     except Exception as ex:
+        #         _LOGGER.error("got exception on %s, tries left %s: %s", query, try_count, ex)
+        #         raise
+        #         _LOGGER.debug("cmd: after raise")
+        #         _ex = ex
+        #         try_count -= 1
+        #         self.connect()
+        #         continue
+        # raise _ex
 
     return _wrap
 
 
 class Lamp:
+    CONTROL_HANDLE = 0x1f
+    NOTIFY_HANDLE = 0x22
     REGISTER_NOTIFY_HANDLE = 0x16
     MAIN_UUID = "8e2f0cbd-1a66-4b53-ace6-b494e25f87bd"
     NOTIFY_UUID = "8f65073d-9f57-4aaa-afea-397d19d5bbeb"
     CONTROL_UUID = "aa7d3f34-2d4f-41e0-807f-52fbf8cf7443"
 
-    def __init__(self, mac, status_cb=None, paired_cb=None,
-                 keep_connection=True, wait_after_call=0):
+    def __init__(self, mac, status_cb=None, paired_cb=None, keep_connection=True, wait_after_call=0):
         self._mac = mac
         self._is_on = False
         self._brightness = None
@@ -68,7 +71,7 @@ class Lamp:
         self._keep_connection = keep_connection
         self._wait_after_call = wait_after_call
         self._lock = threading.RLock()
-        self._conn = None
+        self._dev = None
 
     @property
     def mac(self):
@@ -83,51 +86,35 @@ class Lamp:
         return self._mode
 
     def connect(self):
-        _LOGGER.debug("Lamp connect")
-        if not self._conn:
+        if not self._dev:
             _LOGGER.debug("Lamp no connect")
             # self._conn.disconnect()
-            self._conn = BTLEConnection(self._mac)
-            self._conn.connect()
+            self._dev = BTLEPeripheral(self._mac)
+            self._dev.connect()
         # notify_chars = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
         # notify_char = notify_chars.pop()
         # print(notify_char)
         # notify_handle = notify_char.getHandle()
-        notify_handle = 34
-        _LOGGER.debug("got notify handle: %s" % notify_handle)
-        self._conn.set_callback(notify_handle, self.handle_notification)
+        # _LOGGER.debug("got notify handle: %s" % notify_handle)
+        self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
 
         # control_chars = self._conn.get_characteristics(Lamp.CONTROL_UUID)
         # self.control_char = control_chars.pop()
-        # print(self.control_char)
+        # _LOGGER.debug("got control char: %s" % self.control_char)
         # self.control_handle = self.control_char.getHandle()
-        self.control_handle = 31
-        _LOGGER.debug("got control handle: %s" % self.control_handle)
+        # self.control_handle = 31
+        # _LOGGER.debug("got control handle: %s" % self.control_handle)
 
         # We need to register to receive notifications
-        # self._conn.make_request(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00), timeout=None)
-        # self.pair()
+        self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00), timeout=None)
+        self.pair()
+
+    def disconnect(self):
+        self._dev.disconnect()
 
     def wait_for_notifications(self):
         while True:
-            self._conn.wait(1)
-
-    def disconnect(self):
-        self._conn.disconnect()
-
-    def __enter__(self):
-        self._lock.acquire()
-        if not self._conn and self._keep_connection:
-            self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._lock.release()
-        if not self._keep_connection:
-            _LOGGER.info("not keeping the connection, disconnecting..")
-            self._conn.disconnect()
-
-        return
+            self._dev.wait(1)
 
     @cmd
     def pair(self):
@@ -136,7 +123,7 @@ class Lamp:
     def wait(self, sec):
         end = time.time() + sec
         while time.time() < end:
-            self._conn.wait(0.1)
+            self._dev.wait(0.1)
 
     @property
     def is_on(self):
@@ -234,11 +221,24 @@ class Lamp:
     def get_sleep(self):
         return "GetSleepTimer", {"wait": 0.5}
 
+    def __enter__(self):
+        self._lock.acquire()
+        if not self._dev and self._keep_connection:
+            self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._lock.release()
+        if not self._keep_connection:
+            _LOGGER.info("not keeping the connection, disconnecting..")
+            self._dev.disconnect()
+        return
+
     def __str__(self):
         return "<Lamp %s is_on(%s) mode(%s) rgb(%s) brightness(%s) colortemp(%s)>" % (
             self._mac, self._is_on, self._mode, self._rgb, self._brightness, self._temperature)
 
-    def handle_notification(self, data):
+    def notify_cb(self, data):
         _LOGGER.debug("<< %s", codecs.encode(data, 'hex'))
         res = Response.parse(data)
         payload = res.payload
