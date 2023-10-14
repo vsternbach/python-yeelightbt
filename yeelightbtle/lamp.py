@@ -26,7 +26,7 @@ def cmd(cmd):
             query["payload"] = params
 
         _LOGGER.debug(">> %s (wait: %s)", query, wait)
-        res = self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query), timeout=None, withResponse=True)
+        res = self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query), None, True)
         self._dev.wait(wait)
         return res
         # _ex = None
