@@ -21,7 +21,7 @@ def cmd(cmd):
         query = {"type": req}
         if params:
             if "wait" in params:
-                wait = params["wait"]
+                # wait = params["wait"]
                 del params["wait"]
             query["payload"] = params
 
@@ -107,7 +107,7 @@ class Lamp:
 
         # We need to register to receive notifications
         self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00), timeout=None)
-        self.pair()
+        # self.pair()
 
     def disconnect(self):
         self._dev.disconnect()
