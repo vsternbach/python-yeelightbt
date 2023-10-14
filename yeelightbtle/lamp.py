@@ -105,8 +105,8 @@ class Lamp:
         _LOGGER.debug("got control handle: %s" % self.control_handle)
 
         # We need to register to receive notifications
-        self._conn.make_request(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00), timeout=None)
-        self.pair()
+        # self._conn.make_request(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00), timeout=None)
+        # self.pair()
 
     def wait_for_notifications(self):
         while True:
