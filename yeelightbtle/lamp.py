@@ -89,17 +89,19 @@ class Lamp:
             # self._conn.disconnect()
             self._conn = BTLEConnection(self._mac)
             self._conn.connect()
-        notify_chars = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
-        notify_char = notify_chars.pop()
-        print(notify_char)
-        notify_handle = notify_char.getHandle()
+        # notify_chars = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
+        # notify_char = notify_chars.pop()
+        # print(notify_char)
+        # notify_handle = notify_char.getHandle()
+        notify_handle = 34
         _LOGGER.debug("got notify handle: %s" % notify_handle)
         self._conn.set_callback(notify_handle, self.handle_notification)
 
-        control_chars = self._conn.get_characteristics(Lamp.CONTROL_UUID)
-        self.control_char = control_chars.pop()
-        print(self.control_char)
-        self.control_handle = self.control_char.getHandle()
+        # control_chars = self._conn.get_characteristics(Lamp.CONTROL_UUID)
+        # self.control_char = control_chars.pop()
+        # print(self.control_char)
+        # self.control_handle = self.control_char.getHandle()
+        self.control_handle = 31
         _LOGGER.debug("got control handle: %s" % self.control_handle)
 
         # We need to register to receive notifications
