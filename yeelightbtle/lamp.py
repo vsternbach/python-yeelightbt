@@ -26,7 +26,7 @@ def cmd(cmd):
             query["payload"] = params
 
         _LOGGER.debug(">> %s (wait: %s)", query, wait)
-        res = self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query), None, True)
+        res = self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query))
         self._dev.wait(wait)
         return res
         # _ex = None
@@ -106,7 +106,7 @@ class Lamp:
         # _LOGGER.debug("got control handle: %s" % self.control_handle)
 
         # We need to register to receive notifications
-        self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00), timeout=None)
+        self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00))
         # self.pair()
 
     def disconnect(self):
