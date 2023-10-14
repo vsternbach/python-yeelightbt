@@ -55,7 +55,7 @@ class Lamp:
     CONTROL_UUID = "aa7d3f34-2d4f-41e0-807f-52fbf8cf7443"
 
     def __init__(self, mac, status_cb=None, paired_cb=None,
-                 keep_connection=False, wait_after_call=0):
+                 keep_connection=True, wait_after_call=0):
         self._mac = mac
         self._is_on = False
         self._brightness = None
@@ -82,11 +82,13 @@ class Lamp:
         return self._mode
 
     def connect(self):
-        if self._conn:
-            self._conn.disconnect()
-        self._conn = BTLEConnection(self._mac)
-        self._conn.connect()
-
+        _LOGGER.info("Lamp connect")
+        if not self._conn:
+            _LOGGER.info("Lamp no connect")
+            # self._conn.disconnect()
+            self._conn = BTLEConnection(self._mac)
+            self._conn.connect()
+        print(self._conn)
         notify_char = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
         notify_handle = notify_char.pop().getHandle()
         _LOGGER.debug("got notify handle: %s" % notify_handle)
