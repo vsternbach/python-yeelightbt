@@ -30,38 +30,61 @@ SOFTWARE.
 import logging
 import codecs
 import time
-
-from bluepy import btle
+import click
+from bluepy.btle import Scanner, DefaultDelegate, BTLEException, Peripheral, Debugging
 
 DEFAULT_TIMEOUT = 3
 
 _LOGGER = logging.getLogger(__name__)
 
-class BTLEConnection(btle.DefaultDelegate):
+
+class ScanDelegate(DefaultDelegate):
+    def handleDiscovery(self, dev, isNewDev, isNewData):
+        if isNewDev:
+            name = dev.getValueText(9)
+            click.echo("%s: %s" % (dev.addr, name))
+        # print(dev.addr, name, dev.getScanData())
+        # sys.stdout.flush()
+
+
+class BTLEScanner:
+    def __init__(self, timeout=5):
+        self.timeout = timeout
+        self.scanner = Scanner().withDelegate(ScanDelegate())
+
+    def scan(self):
+        logging.info("Scanning for %s seconds" % self.timeout)
+        try:
+            self.scanner.scan(self.timeout, passive=True)
+        except BTLEException as ex:
+            logging.error(
+                "Unable to scan for devices, did you set-up permissions for bluepy-helper correctly? ex: %s" % ex)
+
+
+class BTLEConnection(DefaultDelegate):
     """Representation of a BTLE Connection."""
 
     def __init__(self, mac):
         """Initialize the connection."""
-        btle.DefaultDelegate.__init__(self)
+        DefaultDelegate.__init__(self)
 
-        self._conn = btle.Peripheral()
+        self._conn = Peripheral()
         self._conn.withDelegate(self)
         self._mac = mac
         self._callbacks = {}
 
-    def connect(self):
-        _LOGGER.debug("Trying to connect to %s", self._mac)
-        try:
-            self._conn.connect(self._mac)
-        except btle.BTLEException as ex:
-            _LOGGER.warning("Unable to connect to the device %s, retrying: %s", self._mac, ex)
+    def connect(self, max_retries=2):
+        _LOGGER.info("Trying to connect to %s", self._mac)
+        for retry in range(max_retries):
             try:
                 self._conn.connect(self._mac)
-            except Exception as ex2:
-                _LOGGER.error("Second connection try to %s failed: %s", self._mac, ex2)
-                raise
+                break
+            except BTLEException as ex:
+                _LOGGER.info("Unable to connect to device %s on %s retry: %s", self._mac, retry+1, ex)
+                if retry == max_retries:
+                    raise
 
-        _LOGGER.debug("Connected to %s", self._mac)
+        _LOGGER.info("Connected to %s", self._mac)
 
     def disconnect(self):
         if self._conn:
@@ -103,6 +126,4 @@ class BTLEConnection(btle.DefaultDelegate):
         res = self._conn.writeCharacteristic(handle, value, withResponse=with_response)
         if timeout:
             self.wait(timeout)
-
         return res
-

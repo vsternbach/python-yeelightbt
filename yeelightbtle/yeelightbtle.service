@@ -1,0 +1,10 @@
+[Unit]
+Description=Yeelightbtle Daemon Service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/yeelightbtled
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,34 +1,31 @@
 import logging
 from yeelightbt import Lamp
-from bluepy import btle
 import click
 import sys
 import time
+from .btle import BTLEScanner
 
 # To allow callback debugs, just pass --debug to the tool
 DEBUG = 0
-
 pass_dev = click.make_pass_decorator(Lamp)
+scanner = BTLEScanner()
 
 
-@click.pass_context
-def paired_cb(ctx, data):
+def paired_cb(data):
     data = data.payload
     if data.pairing_status == "PairRequest":
         click.echo("Waiting for pairing, please push the button/change the brightness")
         time.sleep(5)
     elif data.pairing_status == "PairSuccess":
-        click.echo("We are paired.")
+        logging.info("We are paired.")
     elif data.pairing_status == "PairFailed":
         click.echo("Pairing failed, exiting")
         sys.exit(-1)
     if DEBUG:
-        click.echo("Got paired? %s" % data.pairing_status)
+        logging.debug("Got paired? %s" % data.pairing_status)
 
 
-@click.pass_context
-def notification_cb(ctx, data):
-    print("Got notif: %s" % data)
+def notification_cb(data):
     if DEBUG:
         click.echo("Got notification: %s" % data)
 
@@ -41,9 +38,6 @@ def cli(ctx, mac, debug):
     """ A tool to query Yeelight bedside lamp. """
     if debug:
         logging.basicConfig(level=logging.DEBUG)
-        if debug > 1:
-            btle.Debugging = True
-        DEBUG = debug
     else:
         logging.basicConfig(level=logging.INFO)
 
@@ -51,39 +45,25 @@ def cli(ctx, mac, debug):
     if ctx.invoked_subcommand == "scan":
         return
 
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(scan)
+        return
+
     if mac is None:
-        logging.error("You have to specify MAC address to use either by setting YEELIGHTBT_MAC environment variable or passing --mac option!")
+        logging.error(
+            "You have to specify MAC address to use either by setting YEELIGHTBT_MAC environment variable or passing --mac option!")
         sys.exit(1)
 
-    lamp = Lamp(mac, notification_cb, paired_cb,
-                keep_connection=True, wait_after_call=0.2)
+    lamp = Lamp(mac, notification_cb, paired_cb, keep_connection=True, wait_after_call=0.2)
     lamp.connect()
     lamp.state()
     ctx.obj = lamp
 
-    if ctx.invoked_subcommand is None:
-        ctx.invoke(state)
 
 @cli.command()
 def scan():
-    """ Scans for available devices. """
-    scan = btle.Scanner()
-    sec = 5
-    click.echo("Scanning for %s seconds" % sec)
-    try:
-        devs = scan.scan(sec)
-    except btle.BTLEException as ex:
-        logging.error("Unable to scan for devices, did you set-up permissions for bluepy-helper correctly? ex: %s" % ex)
-        return
+    scanner.scan()
 
-    click.echo("Devices found:")
-    for dev in devs:
-        localname = dev.getValueText(9)
-        if not localname: continue
-        if localname.startswith("XMCTD_"):
-            click.echo("Bedlight lamp v1  %s (%s), rssi=%d" % (dev.addr, localname, dev.rssi))
-        elif localname.startswith("yeelight_ms"):
-            click.echo("Candela %s (%s), rssi=%d" % (dev.addr, localname, dev.rssi))
 
 @cli.command()
 @pass_dev
@@ -91,6 +71,7 @@ def device_info(dev):
     """Returns hw & sw version."""
     vers = dev.get_version_info()
     serial = dev.get_serial_number()
+
 
 @cli.command(name="time")
 @click.argument("new_time", default=None, required=False)
@@ -103,6 +84,7 @@ def time_(dev, new_time):
     else:
         click.echo("Requesting time.")
         dev.get_time()
+
 
 @cli.command()
 @pass_dev
@@ -117,11 +99,13 @@ def off(dev):
     """ Turns the lamp off. """
     dev.turn_off()
 
+
 @cli.command()
 @pass_dev
 def wait_for_notifications(dev):
     """Wait for notifications."""
     dev.wait_for_notifications()
+
 
 @cli.command()
 @click.argument("brightness", type=int, default=None, required=False)
@@ -149,10 +133,12 @@ def color(dev, red, green, blue, brightness):
     else:
         click.echo("Color: %s" % (dev.color,))
 
+
 @cli.command()
 @pass_dev
 def name(dev):
     dev.get_name()
+
 
 @cli.command()
 @click.argument("number", type=int, default=255, required=False)
@@ -164,6 +150,7 @@ def scene(dev, number, name):
     else:
         dev.get_scene(number)
 
+
 @cli.command()
 @click.argument("number", type=int, default=255, required=False)
 @pass_dev
@@ -171,11 +158,13 @@ def alarm(dev, number):
     """Gets alarms."""
     dev.get_alarm(number)
 
+
 @cli.command()
 @pass_dev
 def night_mode(dev):
     """Gets or sets night mode settings."""
     dev.get_nightmode()
+
 
 @cli.command()
 @click.argument("number", type=int, default=255, required=False)
@@ -183,23 +172,30 @@ def night_mode(dev):
 def flow(dev, number):
     dev.get_flow(number)
 
+
 @cli.command()
 @click.argument("time", type=int, default=0, required=False)
 @pass_dev
 def sleep(dev: Lamp, time):
     dev.get_sleep()
 
+
 @cli.command()
 @pass_dev
 def state(dev):
     """ Requests the state from the device. """
-    click.echo(click.style("MAC: %s" % dev.mac, bold=dev.is_on))
-    click.echo("  Mode: %s" % dev.mode)
-    click.echo("  Color: %s" % (dev.color,))
-    click.echo("  Temperature: %s" % dev.temperature)
-    click.echo("  Brightness: %s" % dev.brightness)
+    click.echo("MAC: %s" % dev.mac)
+    click.echo("Status: %s" % dev.is_on)
+    click.echo("Mode: %s" % dev.mode)
+    click.echo("Color: %s" % (dev.color,))
+    click.echo("Temperature: %s" % dev.temperature)
+    click.echo("Brightness: %s" % dev.brightness)
 
-    dev._conn.wait(60)
+
+@cli.command()
+@pass_dev
+def mode(dev):
+    click.echo("Mode: %s" % dev.mode)
 
 
 @cli.command()

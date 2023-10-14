@@ -3,10 +3,11 @@ import codecs
 import logging
 import time
 import threading
-from .connection import BTLEConnection
+from .btle import BTLEConnection
 from .structures import Request, Response, StateResult
 
 _LOGGER = logging.getLogger(__name__)
+
 
 def cmd(cmd):
     def _wrap(self, *args, **kwargs):
@@ -31,10 +32,8 @@ def cmd(cmd):
         while try_count > 0:
             try:
                 request_bytes = Request.build(query)
-                res = self.control_char.write(request_bytes,
-                                              withResponse=True)
+                res = self.control_char.write(request_bytes, withResponse=True)
                 self._conn.wait(wait)
-
                 return res
             except Exception as ex:
                 _LOGGER.error("got exception on %s, tries left %s: %s",
@@ -51,7 +50,7 @@ def cmd(cmd):
 
 class Lamp:
     REGISTER_NOTIFY_HANDLE = 0x16
-    MAIN_UUID =   "8e2f0cbd-1a66-4b53-ace6-b494e25f87bd"
+    MAIN_UUID = "8e2f0cbd-1a66-4b53-ace6-b494e25f87bd"
     NOTIFY_UUID = "8f65073d-9f57-4aaa-afea-397d19d5bbeb"
     CONTROL_UUID = "aa7d3f34-2d4f-41e0-807f-52fbf8cf7443"
 
@@ -83,10 +82,10 @@ class Lamp:
         return self._mode
 
     def connect(self):
-        if self._conn:
-            self._conn.disconnect()
-        self._conn = BTLEConnection(self._mac)
-        self._conn.connect()
+        if not self._conn:
+            # self._conn.disconnect()
+            self._conn = BTLEConnection(self._mac)
+            self._conn.connect()
 
         notify_char = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
         self.notify_handle = notify_char.pop().getHandle()
