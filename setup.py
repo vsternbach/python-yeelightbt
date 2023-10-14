@@ -22,7 +22,7 @@ setup(
 
     keywords='yeelight bluepy',
 
-    packages=['yeelightbt'],
+    packages=['yeelightbtle'],
 
     python_requires='>=3.4',
     install_requires=['bluepy', 'construct==2.9.52', 'click', 'decouple', 'redis'],
