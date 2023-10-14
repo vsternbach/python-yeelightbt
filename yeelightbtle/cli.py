@@ -1,9 +1,9 @@
 import logging
-from yeelightbt import Lamp
 import click
 import sys
 import time
 from .btle import BTLEScanner
+from .lamp import Lamp
 
 # To allow callback debugs, just pass --debug to the tool
 DEBUG = 0
