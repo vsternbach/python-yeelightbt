@@ -43,8 +43,6 @@ class ScanDelegate(DefaultDelegate):
         if isNewDev:
             name = dev.getValueText(9)
             click.echo("%s: %s" % (dev.addr, name))
-        # print(dev.addr, name, dev.getScanData())
-        # sys.stdout.flush()
 
 
 class BTLEScanner:
@@ -57,8 +55,7 @@ class BTLEScanner:
         try:
             self.scanner.scan(self.timeout, passive=True)
         except BTLEException as ex:
-            logging.error(
-                "Unable to scan for devices, did you set-up permissions for bluepy-helper correctly? ex: %s" % ex)
+            logging.error("Unable to scan for devices, did you set-up permissions for bluepy-helper correctly? ex: %s" % ex)
 
 
 class BTLEConnection(DefaultDelegate):
@@ -73,7 +70,7 @@ class BTLEConnection(DefaultDelegate):
         self._mac = mac
         self._callbacks = {}
 
-    def connect(self, max_retries=2):
+    def connect(self, max_retries=3):
         _LOGGER.info("Trying to connect to %s", self._mac)
         for retry in range(max_retries):
             try:

@@ -32,13 +32,14 @@ def cmd(cmd):
         while try_count > 0:
             try:
                 request_bytes = Request.build(query)
+                _LOGGER.debug(">> %s (wait: %s)")
                 res = self.control_char.write(request_bytes, withResponse=True)
                 self._conn.wait(wait)
                 return res
             except Exception as ex:
-                _LOGGER.error("got exception on %s, tries left %s: %s",
-                              query, try_count, ex)
+                _LOGGER.error("got exception on %s, tries left %s: %s", query, try_count, ex)
                 raise
+                _LOGGER.debug("cmd: after raise")
                 _ex = ex
                 try_count -= 1
                 self.connect()
@@ -88,10 +89,10 @@ class Lamp:
             # self._conn.disconnect()
             self._conn = BTLEConnection(self._mac)
             self._conn.connect()
-        print(self._conn)
-        notify_char = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
+        notify_chars = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
+        notify_char = notify_chars.pop()
         print(notify_char)
-        notify_handle = notify_char.pop().getHandle()
+        notify_handle = notify_char.getHandle()
         _LOGGER.debug("got notify handle: %s" % notify_handle)
         self._conn.set_callback(notify_handle, self.handle_notification)
 
