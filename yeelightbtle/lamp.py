@@ -82,15 +82,15 @@ class Lamp:
         return self._mode
 
     def connect(self):
-        if not self._conn:
-            # self._conn.disconnect()
-            self._conn = BTLEConnection(self._mac)
-            self._conn.connect()
+        if self._conn:
+            self._conn.disconnect()
+        self._conn = BTLEConnection(self._mac)
+        self._conn.connect()
 
         notify_char = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
-        self.notify_handle = notify_char.pop().getHandle()
-        _LOGGER.debug("got notify handle: %s" % self.notify_handle)
-        self._conn.set_callback(self.notify_handle, self.handle_notification)
+        notify_handle = notify_char.pop().getHandle()
+        _LOGGER.debug("got notify handle: %s" % notify_handle)
+        self._conn.set_callback(notify_handle, self.handle_notification)
 
         control_chars = self._conn.get_characteristics(Lamp.CONTROL_UUID)
         self.control_char = control_chars.pop()
@@ -98,9 +98,7 @@ class Lamp:
         _LOGGER.debug("got control handle: %s" % self.control_handle)
 
         # We need to register to receive notifications
-        self._conn.make_request(self.REGISTER_NOTIFY_HANDLE,
-                                struct.pack("<BB", 0x01, 0x00),
-                                timeout=None)
+        self._conn.make_request(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00), timeout=None)
         self.pair()
 
     def wait_for_notifications(self):

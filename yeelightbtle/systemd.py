@@ -13,4 +13,5 @@ subprocess.call(['systemctl', 'daemon-reload'])
 
 # Enable and start the service
 subprocess.call(['systemctl', 'enable', 'yeelightbtle.service'])
+subprocess.call(['systemctl', 'status', 'yeelightbtle.service'])
 subprocess.call(['systemctl', 'start', 'yeelightbtle.service'])
