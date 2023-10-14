@@ -50,8 +50,7 @@ def cli(ctx, mac, debug):
         return
 
     if mac is None:
-        logging.error(
-            "You have to specify MAC address to use either by setting YEELIGHTBT_MAC environment variable or passing --mac option!")
+        logging.error("You have to specify MAC address to use either by setting YEELIGHTBT_MAC environment variable or passing --mac option!")
         sys.exit(1)
 
     lamp = Lamp(mac, notification_cb, paired_cb, keep_connection=True, wait_after_call=0.2)

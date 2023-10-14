@@ -82,20 +82,22 @@ class Lamp:
         return self._mode
 
     def connect(self):
-        _LOGGER.info("Lamp connect")
+        _LOGGER.debug("Lamp connect")
         if not self._conn:
-            _LOGGER.info("Lamp no connect")
+            _LOGGER.debug("Lamp no connect")
             # self._conn.disconnect()
             self._conn = BTLEConnection(self._mac)
             self._conn.connect()
         print(self._conn)
         notify_char = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
+        print(notify_char)
         notify_handle = notify_char.pop().getHandle()
         _LOGGER.debug("got notify handle: %s" % notify_handle)
         self._conn.set_callback(notify_handle, self.handle_notification)
 
         control_chars = self._conn.get_characteristics(Lamp.CONTROL_UUID)
         self.control_char = control_chars.pop()
+        print(self.control_char)
         self.control_handle = self.control_char.getHandle()
         _LOGGER.debug("got control handle: %s" % self.control_handle)
 
