@@ -84,7 +84,7 @@ class BTLEPeripheral(DefaultDelegate):
         self._mac = mac
         self._callbacks = {}
 
-    @retry
+    # @retry
     def connect(self):
         _LOGGER.info("Trying to connect to %s", self._mac)
         self._peripheral.connect(self._mac)
@@ -133,7 +133,7 @@ class BTLEPeripheral(DefaultDelegate):
         """Set the callback for a Notification handle. It will be called with the parameter data, which is binary."""
         self._callbacks[handle] = function
 
-    @retry
+    # @retry
     def write_characteristic(self, handle, value, timeout=0, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
         _LOGGER.debug("Writing %s to %s with with_response=%s", codecs.encode(value, 'hex'), handle, with_response)
