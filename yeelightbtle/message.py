@@ -16,19 +16,20 @@ class Command:
         self.payload = payload
 
 class MessageService:
-    def __init__(self, redis_client, channel_name, state_key_prefix):
+    def __init__(self, redis_client, control_channel, state_channel, state_key_prefix):
         # self.lamp_service = lamp_service
         self.redis_client = redis_client
         self.pubsub = self.redis_client.pubsub()
-        self.channel_name = channel_name
+        self.control_channel = control_channel
+        self.state_channel = state_channel
         self.state_key_prefix = state_key_prefix
 
     def publish(self, message):
-        self.redis_client.publish(self.channel_name, message)
+        self.redis_client.publish(self.state_channel, message)
 
     def subscribe(self, callback):
         print("Message service is subscribed")
-        self.pubsub.subscribe(self.channel_name)
+        self.pubsub.subscribe(self.control_channel)
         for message in self.pubsub.listen():
             if message['type'] == 'message':
                 callback(message['data'])

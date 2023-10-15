@@ -4,8 +4,6 @@ import os
 import redis
 
 from .proxy import ProxyService
-from .lamp import Lamp
-# from decouple import config
 from .message import MessageService, CommandType, Command
 
 # Check if the .env file exists
@@ -20,15 +18,17 @@ from .message import MessageService, CommandType, Command
 # Access environment variables
 REDIS_HOST = 'localhost'  # config('REDIS_HOST', default='localhost')
 REDIS_PORT = 6379  # config('REDIS_PORT', default=6379)
-REDIS_CHANNEL = 'lamp_control'  # config('REDIS_CHANNEL', default='lamp_control')
+REDIS_CONTROL_CHANNEL = 'lamp_control'  # config('REDIS_CHANNEL', default='lamp_control')
+REDIS_STATE_CHANNEL = 'lamp_state'  # config('REDIS_CHANNEL', default='lamp_state')
+REDIS_KEY = 'lamp_state'  # config('REDIS_CHANNEL', default='lamp_state')
 
 
 class Daemon:
     def __init__(self):
         self.redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
         print("Redis client is running on %s:%s" % (REDIS_HOST, REDIS_PORT))
-        self._message_service = MessageService(self.redis_client, REDIS_CHANNEL, "lamp_state")
-        print("Message service is on channel %s" % REDIS_CHANNEL)
+        self._message_service = MessageService(self.redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
+        print("Message service is on channel %s" % REDIS_CONTROL_CHANNEL)
         self._message_service.subscribe(self._message_handler)
         self._proxy_service = ProxyService(self._message_service)
         # Register the cleanup method with atexit
