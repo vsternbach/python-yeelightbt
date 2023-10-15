@@ -21,6 +21,7 @@ REDIS_HOST = 'localhost'  # config('REDIS_HOST', default='localhost')
 REDIS_PORT = 6379  # config('REDIS_PORT', default=6379)
 REDIS_CHANNEL = 'lamp_control'  # config('REDIS_CHANNEL', default='lamp_control')
 
+
 class Daemon:
     def __init__(self):
         redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
@@ -40,7 +41,11 @@ class Daemon:
         else:
             print("Received an invalid message:", payload)
 
-# def daemon():
+
+def daemon():
+    Daemon()
+
+
 #     redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 #     message_service = MessageService(redis_client, REDIS_CHANNEL, "lamp_state")
 #     proxy_service = ProxyService(message_service)
@@ -50,7 +55,7 @@ class Daemon:
 
 
 if __name__ == '__main__':
-    Daemon()
+    daemon()
 
     # while True:
     #     command_type = input("Enter a command type (setColor, setBrightness, setStatus, setMode, getState): ")
