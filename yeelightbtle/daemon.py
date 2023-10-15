@@ -62,23 +62,14 @@ def message_handler(ctx, message):
 
 def run():
     ctx = {}
-    try:
-        redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-        message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
-        proxy_service = ProxyService(message_service)
-        ctx['message_service'] = message_service
-        ctx['proxy_service'] = proxy_service
-        message_service.subscribe(lambda message: message_handler(ctx, message))
-        atexit.register(redis_client.close())
-    except Exception as e:
-        print(f"An exception occurred: {e}")
-        redis_client.close()
+    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
+    proxy_service = ProxyService(message_service)
+    ctx['message_service'] = message_service
+    ctx['proxy_service'] = proxy_service
+    message_service.subscribe(lambda message: message_handler(ctx, message))
+    atexit.register(redis_client.close())
 
 
 if __name__ == '__main__':
-    try:
-        run()
-    except KeyboardInterrupt:
-        # Handle a Ctrl+C event
-        print("KeyboardInterrupt received.")
-        cleanup()  # Perform cleanup
+    run()
