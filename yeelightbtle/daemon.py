@@ -63,9 +63,11 @@ def message_handler(ctx, message):
 def run():
     ctx = {}
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-    ctx.message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
-    ctx.proxy_service = ProxyService(ctx.message_service)
-    ctx.message_service.subscribe(lambda message: message_handler(ctx, message))
+    message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
+    proxy_service = ProxyService(message_service)
+    ctx['message_service'] = message_service
+    ctx['proxy_service'] = proxy_service
+    message_service.subscribe(lambda message: message_handler(ctx, message))
     atexit.register(redis_client.close())
 
 if __name__ == '__main__':
