@@ -64,6 +64,7 @@ def message_handler(ctx, message):
     else:
         print("Received an invalid message:", payload)
 
+
 def run():
     ctx = {}
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)

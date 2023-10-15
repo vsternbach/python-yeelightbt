@@ -10,7 +10,10 @@ class ProxyService:
         self._message_service = message_service
 
     def cmd(self, uuid, command: Command):
-        lamp = self._lamps[uuid] or Lamp(uuid, lambda data: self.status_cb(uuid, data), lambda data: self.paired_cb(uuid, data), keep_connection=True)
+        key = uuid.replace(":", "").lower()
+        if key not in self._lamps:
+            self._lamps[key] = Lamp(uuid, lambda data: self.status_cb(uuid, data), lambda data: self.paired_cb(uuid, data), keep_connection=True)
+        lamp = self._lamps[key]
         if not lamp.is_connected:
             lamp.connect()
         if command.type == CommandType.SetColor:
