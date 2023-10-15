@@ -19,6 +19,7 @@ class MessageService:
     def __init__(self, redis_client, channel_name, state_key_prefix):
         # self.lamp_service = lamp_service
         self.redis_client = redis_client
+        self.pubsub = self.redis_client.pubsub()
         self.channel_name = channel_name
         self.state_key_prefix = state_key_prefix
 
@@ -27,9 +28,8 @@ class MessageService:
 
     def subscribe(self, callback):
         print("Message service is subscribed")
-        pubsub = self.redis_client.pubsub()
-        pubsub.subscribe(self.channel_name)
-        for message in pubsub.listen():
+        self.pubsub.subscribe(self.channel_name)
+        for message in self.pubsub.listen():
             if message['type'] == 'message':
                 callback(message['data'])
 
