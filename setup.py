@@ -29,7 +29,7 @@ setup(
     entry_points={
         'console_scripts': [
             'yeelightbtle=yeelightbtle.cli:cli',
-            'yeelightbtled=yeelightbtle.daemon:daemon'
+            'yeelightbtled=yeelightbtle.daemon:run'
         ],
     },
     # scripts=['install.py']

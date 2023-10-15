@@ -1,7 +1,5 @@
 import json
 
-# from yeelightbtle.daemon import LampService
-
 
 class CommandType:
     SetColor = 'setColor'
@@ -10,10 +8,12 @@ class CommandType:
     SetMode = 'setMode'
     GetState = 'getState'
 
+
 class Command:
     def __init__(self, type: CommandType, payload=None):
         self.type = type
         self.payload = payload
+
 
 class MessageService:
     def __init__(self, redis_client, control_channel, state_channel, state_key_prefix):
@@ -71,6 +71,3 @@ class MessageService:
                 "mode": 0
             }
             return default_state
-
-
-
