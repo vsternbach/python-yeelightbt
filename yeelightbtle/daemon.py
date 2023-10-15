@@ -52,10 +52,14 @@ REDIS_KEY = 'lamp_state'  # config('REDIS_CHANNEL', default='lamp_state')
 
 def message_handler(ctx, message):
     # Parse the received message as JSON
-    payload = json.loads(message)
-    (uuid, command) = payload
+    data = json.loads(message)
+    uuid = data['uuid']
+    command = data['command']
+    type = command['type']
+    payload = command['payload']
+    print('received message from %s: command=%s and payload=%s' % (uuid, type, payload))
     if uuid and command:
-        ctx['proxy_service'].cmd(uuid, Command(command['type'], command['payload']))
+        ctx['proxy_service'].cmd(uuid, Command(type, payload))
         ctx['message_service'].set_state(uuid, command)
     else:
         print("Received an invalid message:", payload)
