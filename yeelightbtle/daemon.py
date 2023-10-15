@@ -55,20 +55,30 @@ def message_handler(ctx, message):
     payload = json.loads(message)
     (uuid, command) = payload
     if uuid and command:
-        ctx.proxy_service.cmd(uuid, Command(command['type'], command['payload']))
-        ctx.message_service.set_state(uuid, command)
+        ctx['proxy_service'].cmd(uuid, Command(command['type'], command['payload']))
+        ctx['message_service'].set_state(uuid, command)
     else:
         print("Received an invalid message:", payload)
 
 def run():
     ctx = {}
-    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-    message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
-    proxy_service = ProxyService(message_service)
-    ctx['message_service'] = message_service
-    ctx['proxy_service'] = proxy_service
-    message_service.subscribe(lambda message: message_handler(ctx, message))
-    atexit.register(redis_client.close())
+    try:
+        redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+        message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
+        proxy_service = ProxyService(message_service)
+        ctx['message_service'] = message_service
+        ctx['proxy_service'] = proxy_service
+        message_service.subscribe(lambda message: message_handler(ctx, message))
+        atexit.register(redis_client.close())
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+        redis_client.close()
+
 
 if __name__ == '__main__':
-    run()
+    try:
+        run()
+    except KeyboardInterrupt:
+        # Handle a Ctrl+C event
+        print("KeyboardInterrupt received.")
+        cleanup()  # Perform cleanup
