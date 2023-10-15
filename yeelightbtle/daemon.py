@@ -1,7 +1,6 @@
 import atexit
 import json
 import os
-import click
 import redis
 
 from .proxy import ProxyService
@@ -51,7 +50,6 @@ REDIS_KEY = 'lamp_state'  # config('REDIS_CHANNEL', default='lamp_state')
 #             self.redis_client.close()
 #             print("Redis connection closed.")
 
-@click.pass_context
 def message_handler(ctx, message):
     # Parse the received message as JSON
     payload = json.loads(message)
@@ -61,12 +59,13 @@ def message_handler(ctx, message):
         ctx.message_service.set_state(uuid, command)
     else:
         print("Received an invalid message:", payload)
-@click.pass_context
-def run(ctx):
+
+def run():
+    ctx = {}
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     ctx.message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
     ctx.proxy_service = ProxyService(ctx.message_service)
-    ctx.message_service.subscribe(lambda message: message_handler(message))
+    ctx.message_service.subscribe(lambda message: message_handler(ctx, message))
     atexit.register(redis_client.close())
 
 if __name__ == '__main__':
