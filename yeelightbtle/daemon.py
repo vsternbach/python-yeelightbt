@@ -24,7 +24,7 @@ REDIS_CHANNEL = 'lamp_control'  # config('REDIS_CHANNEL', default='lamp_control'
 
 class Daemon:
     def __init__(self):
-        redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+        redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
         print("Redis client is running on %s:%s" % (REDIS_HOST, REDIS_CHANNEL))
         self._message_service = MessageService(redis_client, REDIS_CHANNEL, "lamp_state")
         print("Message service is on channel %s" % REDIS_CHANNEL)
