@@ -85,9 +85,13 @@ class Lamp:
     def mode(self):
         return self._mode
 
+    @property
+    def is_connected(self):
+        return self._dev is not None
+
     def connect(self):
-        if not self._dev:
-            _LOGGER.debug("Lamp no connect")
+        if not self.is_connected:
+            _LOGGER.debug("Lamp is not connected")
             # self._conn.disconnect()
             self._dev = BTLEPeripheral(self._mac)
             self._dev.connect()

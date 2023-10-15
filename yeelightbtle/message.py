@@ -1,5 +1,7 @@
 import json
 
+# from yeelightbtle.daemon import LampService
+
 
 class CommandType:
     SetColor = 'setColor'
@@ -8,17 +10,23 @@ class CommandType:
     SetMode = 'setMode'
     GetState = 'getState'
 
+class Command:
+    def __init__(self, type: CommandType, payload=None):
+        self.type = type
+        self.payload = payload
 
 class MessageService:
     def __init__(self, redis_client, channel_name, state_key_prefix):
+        # self.lamp_service = lamp_service
         self.redis_client = redis_client
         self.channel_name = channel_name
         self.state_key_prefix = state_key_prefix
 
-    def publish_message(self, message):
+    def publish(self, message):
         self.redis_client.publish(self.channel_name, message)
 
     def subscribe(self, callback):
+        print("Message service is subscribed")
         pubsub = self.redis_client.pubsub()
         pubsub.subscribe(self.channel_name)
         for message in pubsub.listen():
@@ -27,7 +35,7 @@ class MessageService:
 
     def set_state(self, uuid, command):
         state_key = f"{self.state_key_prefix}:{uuid}"
-        state = self.get_state(uuid) or {}
+        state = self.get_state(uuid)
 
         if command['type'] == CommandType.SetColor:
             state['color'] = command['payload']
@@ -37,6 +45,8 @@ class MessageService:
             state['status'] = command['payload']
         elif command['type'] == CommandType.SetMode:
             state['mode'] = command['payload']
+        elif command['type'] == CommandType.GetState:
+            pass
         else:
             print(f"Unsupported command type: {command['type']}")
             return
@@ -45,7 +55,7 @@ class MessageService:
 
         # Publish a message when the state changes
         message = json.dumps({"uuid": uuid, "state": state})
-        self.publish_message(message)
+        self.publish(message)
 
     def get_state(self, uuid):
         state_key = f"{self.state_key_prefix}:{uuid}"
