@@ -1,3 +1,4 @@
+import atexit
 import json
 import os
 import redis
@@ -24,12 +25,14 @@ REDIS_CHANNEL = 'lamp_control'  # config('REDIS_CHANNEL', default='lamp_control'
 
 class Daemon:
     def __init__(self):
-        redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-        print("Redis client is running on %s:%s" % (REDIS_HOST, REDIS_CHANNEL))
-        self._message_service = MessageService(redis_client, REDIS_CHANNEL, "lamp_state")
+        self.redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+        print("Redis client is running on %s:%s" % (REDIS_HOST, REDIS_PORT))
+        self._message_service = MessageService(self.redis_client, REDIS_CHANNEL, "lamp_state")
         print("Message service is on channel %s" % REDIS_CHANNEL)
         self._message_service.subscribe(self._message_handler)
         self._proxy_service = ProxyService(self._message_service)
+        # Register the cleanup method with atexit
+        atexit.register(self.cleanup)
 
     def _message_handler(self, message):
         # Parse the received message as JSON
@@ -40,6 +43,12 @@ class Daemon:
             self._message_service.set_state(uuid, command)
         else:
             print("Received an invalid message:", payload)
+
+    def cleanup(self):
+        # This method is called when the program exits
+        if self.redis_client is not None:
+            self.redis_client.close()
+            print("Redis connection closed.")
 
 
 def daemon():
