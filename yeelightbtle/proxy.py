@@ -1,5 +1,5 @@
 from .lamp import Lamp
-from .message import MessageService, Command, CommandType, state
+from .message import MessageService, Command, CommandType
 
 
 class ProxyService:
