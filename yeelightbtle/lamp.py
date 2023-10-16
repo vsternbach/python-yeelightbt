@@ -90,7 +90,7 @@ class Lamp:
 
     @property
     def is_connected(self):
-        return self._dev is not None
+        return self._dev.connected
 
     @retry(BTLEException, tries=3, delay=1)
     def connect(self):
