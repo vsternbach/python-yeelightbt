@@ -38,22 +38,6 @@ DEFAULT_TIMEOUT = 3
 _LOGGER = logging.getLogger(__name__)
 
 
-def retry(method, retries=3):
-    method_name = method.__name__
-
-    def _wrap(self, *args, **kwargs):
-        for retry in range(retries):
-            try:
-                method(self, *args, **kwargs)
-                break
-            except BTLEException as ex:
-                _LOGGER.error("%s failed on %s retry: %s", method_name, retry + 1, ex)
-                if retry == retries:
-                    raise ex
-
-    return _wrap
-
-
 class ScanDelegate(DefaultDelegate):
     def handleDiscovery(self, dev, isNewDev, isNewData):
         if isNewDev:
@@ -133,7 +117,7 @@ class BTLEPeripheral(DefaultDelegate):
         """Set the callback for a Notification handle. It will be called with the parameter data, which is binary."""
         self._callbacks[handle] = function
 
-    # @retry
+    @retry(BTLEException, tries=3, delay=1)
     def write_characteristic(self, handle, value, timeout=0, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
         _LOGGER.debug("Writing %s to %s with with_response=%s", codecs.encode(value, 'hex'), handle, with_response)

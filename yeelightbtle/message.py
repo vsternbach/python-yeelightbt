@@ -22,6 +22,8 @@ class MessageService:
         self.control_channel = control_channel
         self.state_channel = state_channel
         self.state_key_prefix = state_key_prefix
+        for key in redis_client.scan_iter():
+            print(f"${key}: ${self.redis_client.get(key)}")
 
     def state_key(self, uuid):
         return f"{self.state_key_prefix}:{uuid}"
