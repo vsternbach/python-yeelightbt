@@ -4,7 +4,7 @@ import logging
 import time
 import threading
 from retry import retry
-from bluepy.btle import BTLEException
+from bluepy.btle import BTLEException, BTLEDisconnectError
 
 from .btle import BTLEPeripheral
 from .structures import Request, Response, StateResult
@@ -92,7 +92,7 @@ class Lamp:
     def is_connected(self):
         return self._dev.connected
 
-    @retry(BTLEException, tries=3, delay=1)
+    @retry(BTLEDisconnectError, tries=3, delay=1)
     def connect(self):
         if not self.is_connected:
             _LOGGER.debug("Lamp is not connected")
