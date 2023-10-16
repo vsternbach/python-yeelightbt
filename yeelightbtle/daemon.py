@@ -1,4 +1,5 @@
 import atexit
+import logging
 import redis
 
 from .proxy import ProxyService
@@ -44,4 +45,5 @@ def run():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     run()

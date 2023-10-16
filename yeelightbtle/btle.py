@@ -1,32 +1,3 @@
-"""
-A simple wrapper for bluepy's btle.Connection.
-Handles Connection duties (reconnecting etc.) transparently.
-A butchered version from python-eq3bt, which was butchered from bluepy_devices
-with the following license:
-
-The MIT License (MIT)
-
-Copyright (c) 2016 Markus Peter
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-"""
 import logging
 import codecs
 import time
@@ -60,7 +31,6 @@ class BTLEScanner:
 
 
 class BTLEPeripheral(DefaultDelegate):
-    """Representation of a BTLE Peripheral."""
 
     def __init__(self, mac):
         """Initialize the Peripheral."""
@@ -70,20 +40,11 @@ class BTLEPeripheral(DefaultDelegate):
         self._callbacks = {}
         self.connected = False
 
-    # @retry
     def connect(self):
         _LOGGER.info("Trying to connect to %s", self._mac)
         self._peripheral.connect(self._mac)
         _LOGGER.info("Connected to %s", self._mac)
         self.connected = True
-        # for retry in range(max_retries):
-        #     try:
-        #         self._peripheral.connect(self._mac)
-        #         break
-        #     except BTLEException as ex:
-        #         _LOGGER.info("Unable to connect to device %s on %s retry: %s", self._mac, retry+1, ex)
-        #         if retry == max_retries:
-        #             raise
 
     def disconnect(self):
         if self._peripheral:
