@@ -61,17 +61,17 @@ class Lamp:
 
     def __init__(self, mac, status_cb=None, paired_cb=None, keep_connection=True, wait_after_call=0):
         self._mac = mac
-        self._is_on = False
-        self._brightness = None
-        self._temperature = None
-        self._rgb = None
-        self._mode = None
         self._paired_cb = paired_cb
         self._status_cb = status_cb
         self._keep_connection = keep_connection
         self._wait_after_call = wait_after_call
         self._lock = threading.RLock()
         self._dev = None
+        self._is_on = False
+        self._brightness = None
+        self._temperature = None
+        self._rgb = None
+        self._mode = None
 
     @property
     def mac(self):
@@ -213,6 +213,17 @@ class Lamp:
     def state(self) -> StateResult:
         return "GetState", {"wait": 0.5}
 
+    @property
+    def state_data(self):
+        return {
+            "color": self.color,
+            "ct": self.temperature,
+            "brightness": self.brightness,
+            "mode": self.mode,
+            "is_on": self.is_on,
+            "status": "on" if self.is_on else "off"
+        }
+
     @cmd
     def get_alarm(self, number):
         return "GetAlarm", {"id": number, "wait": 0.5}
@@ -257,7 +268,6 @@ class Lamp:
                 self._status_cb(self)
         elif res.type == "PairingResult":
             _LOGGER.debug("pairing res: %s", res)
-
             if self._paired_cb:
                 self._paired_cb(res)
 

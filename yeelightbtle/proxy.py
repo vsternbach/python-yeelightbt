@@ -1,5 +1,5 @@
 from .lamp import Lamp
-from .message import MessageService, Command, CommandType
+from .message import MessageService, Command, CommandType, state
 
 
 class ProxyService:
@@ -13,14 +13,15 @@ class ProxyService:
         key = uuid.replace(":", "").lower()
         if key not in self._lamps:
             print('New Lamp')
-            self._lamps[key] = Lamp(uuid, lambda data: self.status_cb(uuid, data), lambda data: self.paired_cb(uuid, data), keep_connection=True)
+            self._lamps[key] = Lamp(uuid, lambda data: self.status_cb(uuid, data),
+                                    lambda data: self.paired_cb(uuid, data), keep_connection=True)
         else:
             print('Existing Lamp')
         lamp = self._lamps[key]
         if not lamp.is_connected:
             print('Lamp not connected')
             lamp.connect()
-        print('Lamp not connected')
+        print('Lamp connected')
         if command.type == CommandType.SetColor:
             lamp.set_color(command.payload)
         elif command.type == CommandType.SetBrightness:
@@ -30,15 +31,17 @@ class ProxyService:
         elif command.type == CommandType.SetMode:
             lamp.set_scene(command.payload)
         elif command.type == CommandType.GetState:
+            # Publish the current state straight away
+            self._message_service.publish_state(uuid)
+            # And get a new state from lamp
             lamp.state()
         else:
             print(f"Unsupported command type: {command.type}")
             return
-        # lamp.connect()
-        # lamp.state()
 
     def paired_cb(self, uuid, data):
         print("Got paired to %s: %s" % (uuid, data))
 
-    def status_cb(self, uuid, data):
-        print("Got notification from %s: %s" % (uuid, data))
+    def status_cb(self, uuid, lamp: Lamp):
+        print("Got notification from %s: %s" % (uuid, lamp))
+        self._message_service.update_state(uuid, lamp.state_data)
