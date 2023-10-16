@@ -31,6 +31,7 @@ import logging
 import codecs
 import time
 import click
+from retry import retry
 from bluepy.btle import Scanner, DefaultDelegate, BTLEException, Peripheral, Debugging
 
 DEFAULT_TIMEOUT = 3
