@@ -69,12 +69,12 @@ class Lamp:
         self._keep_connection = keep_connection
         self._wait_after_call = wait_after_call
         self._lock = threading.RLock()
-        self._dev = None
         self._is_on = False
         self._brightness = None
         self._temperature = None
         self._rgb = None
         self._mode = None
+        self._dev = BTLEPeripheral(mac)
 
     @property
     def mac(self):
@@ -97,7 +97,6 @@ class Lamp:
         if not self.is_connected:
             _LOGGER.debug("Lamp is not connected")
             # self._conn.disconnect()
-            self._dev = BTLEPeripheral(self._mac)
             self._dev.connect()
         # notify_chars = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
         # notify_char = notify_chars.pop()
