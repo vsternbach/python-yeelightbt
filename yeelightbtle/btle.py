@@ -92,7 +92,8 @@ class BTLEPeripheral(DefaultDelegate):
                 if timeout:
                     self.wait(timeout)
                 return res
-            except BTLEDisconnectError as ex:
+            # except BTLEDisconnectError as ex:
+            except BTLEException as ex:
                 _LOGGER.debug("BTLE is disconnected, reconnecting")
                 _ex = ex
                 retries -= 1
