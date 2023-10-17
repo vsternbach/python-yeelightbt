@@ -18,10 +18,10 @@ class ProxyService:
         else:
             print('Existing Lamp')
         lamp = self._lamps[key]
-        if not lamp.is_connected:
-            print('Lamp not connected')
-            lamp.connect()
-        print('Lamp connected')
+        # if not lamp.is_connected:
+        #     print('Lamp not connected')
+        #     lamp.connect()
+        # print('Lamp connected')
         if command.type == CommandType.SetColor:
             lamp.set_color(command.payload)
         elif command.type == CommandType.SetBrightness:

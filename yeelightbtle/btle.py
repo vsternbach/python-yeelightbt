@@ -3,7 +3,7 @@ import codecs
 import time
 import click
 from retry import retry
-from bluepy.btle import Scanner, DefaultDelegate, BTLEException, Peripheral, Debugging
+from bluepy.btle import Scanner, DefaultDelegate, BTLEException, Peripheral, Debugging, BTLEDisconnectError
 
 DEFAULT_TIMEOUT = 3
 
@@ -81,11 +81,20 @@ class BTLEPeripheral(DefaultDelegate):
         """Set the callback for a Notification handle. It will be called with the parameter data, which is binary."""
         self._callbacks[handle] = function
 
-    # @retry(BTLEException, tries=3, delay=1)
     def write_characteristic(self, handle, value, timeout=0, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
-        _LOGGER.debug("Writing %s to %s with with_response=%s", codecs.encode(value, 'hex'), handle, with_response)
-        res = self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)
-        if timeout:
-            self.wait(timeout)
-        return res
+        _ex = None
+        retries = 3
+        while retries > 0:
+            try:
+                _LOGGER.debug("Writing %s to %s with retries %s", codecs.encode(value, 'hex'), handle, retries)
+                res = self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)
+                if timeout:
+                    self.wait(timeout)
+                return res
+            except BTLEDisconnectError as ex:
+                _LOGGER.debug("BTLE is disconnected, reconnecting")
+                _ex = ex
+                retries -= 1
+                self.connect()
+

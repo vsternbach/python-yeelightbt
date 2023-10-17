@@ -4,7 +4,7 @@ import logging
 import time
 import threading
 from retry import retry
-from bluepy.btle import BTLEException, BTLEDisconnectError
+from bluepy.btle import BTLEException
 
 from .btle import BTLEPeripheral
 from .structures import Request, Response, StateResult
@@ -29,9 +29,9 @@ def cmd(cmd):
             query["payload"] = params
 
         _LOGGER.debug(">> %s (wait: %s)", query, wait)
-        res = self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query))
-        self._dev.wait(wait)
-        return res
+        self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query))
+        # self._dev.wait(wait)
+        # return res
         # _ex = None
         # try_count = 3
         # while try_count > 0:
@@ -92,17 +92,12 @@ class Lamp:
     def is_connected(self):
         return self._dev.connected
 
-    @retry(BTLEDisconnectError, tries=3, delay=1)
+    # @retry(BTLEException, tries=3, delay=1)
     def connect(self):
-        if not self.is_connected:
-            _LOGGER.debug("Lamp is not connected")
-            # self._conn.disconnect()
-            self._dev.connect()
-        # notify_chars = self._conn.get_characteristics(Lamp.NOTIFY_UUID)
-        # notify_char = notify_chars.pop()
-        # print(notify_char)
-        # notify_handle = notify_char.getHandle()
-        # _LOGGER.debug("got notify handle: %s" % notify_handle)
+        # if not self.is_connected:
+        #     _LOGGER.debug("Lamp is not connected")
+        #     # self._conn.disconnect()
+        #     self._dev.connect()
         self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
 
         # control_chars = self._conn.get_characteristics(Lamp.CONTROL_UUID)
