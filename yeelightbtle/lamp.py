@@ -4,54 +4,26 @@ import logging
 import time
 import threading
 from retry import retry
+from functools import wraps
 from bluepy.btle import BTLEException
-
 from .btle import BTLEPeripheral
 from .structures import Request, Response, StateResult
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def cmd(cmd):
-    def _wrap(self, *args, **kwargs):
-        req = cmd(self, *args, **kwargs)
-        params = None
-        wait = self._wait_after_call
-        if isinstance(req, tuple):
-            params = req[1]
-            req = req[0]
+def cmd(command):
+    @wraps(command)
+    def wrapped(self, *args, **kwargs):
+        res = command(self, *args, **kwargs)
+        obj = {"type": res}
+        if isinstance(res, tuple):
+            obj["type"] = res[0]
+            obj["payload"] = res[1]
+        _LOGGER.debug(f"@cmd ${command.__name__}: ${obj}")
+        self.update(Request.build(obj))
 
-        query = {"type": req}
-        if params:
-            if "wait" in params:
-                # wait = params["wait"]
-                del params["wait"]
-            query["payload"] = params
-
-        _LOGGER.debug(">> %s (wait: %s)", query, wait)
-        self._dev.write_characteristic(self.CONTROL_HANDLE, Request.build(query))
-        # self._dev.wait(wait)
-        # return res
-        # _ex = None
-        # try_count = 3
-        # while try_count > 0:
-        #     try:
-        #         request_bytes = Request.build(query)
-        #         _LOGGER.debug(">> %s (wait: %s)")
-        #         res = self.control_char.write(request_bytes, withResponse=True)
-        #         self._conn.wait(wait)
-        #         return res
-        #     except Exception as ex:
-        #         _LOGGER.error("got exception on %s, tries left %s: %s", query, try_count, ex)
-        #         raise
-        #         _LOGGER.debug("cmd: after raise")
-        #         _ex = ex
-        #         try_count -= 1
-        #         self.connect()
-        #         continue
-        # raise _ex
-
-    return _wrap
+    return wrapped
 
 
 class Lamp:
@@ -62,12 +34,11 @@ class Lamp:
     NOTIFY_UUID = "8f65073d-9f57-4aaa-afea-397d19d5bbeb"
     CONTROL_UUID = "aa7d3f34-2d4f-41e0-807f-52fbf8cf7443"
 
-    def __init__(self, mac, status_cb=None, paired_cb=None, keep_connection=True, wait_after_call=0):
+    def __init__(self, mac, status_cb=None, paired_cb=None, keep_connection=True):
         self._mac = mac
         self._paired_cb = paired_cb
         self._status_cb = status_cb
         self._keep_connection = keep_connection
-        self._wait_after_call = wait_after_call
         self._lock = threading.RLock()
         self._is_on = False
         self._brightness = None
@@ -75,61 +46,70 @@ class Lamp:
         self._rgb = None
         self._mode = None
         self._dev = BTLEPeripheral(mac)
+        self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
+
+    @retry(BTLEException, tries=3, delay=1)
+    def connect(self):
+        self._dev.connect()
+        # self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
+        # self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00))
+
+    def disconnect(self):
+        self._dev.disconnect()
+
+    def update(self, data):
+        tries = 3
+        while tries > 0:
+            try:
+                self._dev.write_characteristic(self.CONTROL_HANDLE, data)
+                return
+            except BTLEException:
+                _LOGGER.debug("Lamp is disconnected, reconnecting")
+                tries -= 1
+                self.connect()
+
+    def wait_for_notifications(self):
+        while True:
+            self._dev.wait(1)
 
     @property
     def mac(self):
         return self._mac
 
     @property
-    def available(self):
-        return self._mode is not None
-
-    @property
     def mode(self):
         return self._mode
 
     @property
-    def is_connected(self):
-        return self._dev.connected
+    def is_on(self):
+        return self._is_on
 
-    # @retry(BTLEException, tries=3, delay=1)
-    def connect(self):
-        # if not self.is_connected:
-        #     _LOGGER.debug("Lamp is not connected")
-        #     # self._conn.disconnect()
-        #     self._dev.connect()
-        self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
+    @property
+    def temperature(self):
+        return self._temperature
 
-        # control_chars = self._conn.get_characteristics(Lamp.CONTROL_UUID)
-        # self.control_char = control_chars.pop()
-        # _LOGGER.debug("got control char: %s" % self.control_char)
-        # self.control_handle = self.control_char.getHandle()
-        # self.control_handle = 31
-        # _LOGGER.debug("got control handle: %s" % self.control_handle)
+    @property
+    def brightness(self):
+        return self._brightness
 
-        # We need to register to receive notifications
-        self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00))
-        # self.pair()
+    @property
+    def color(self):
+        return self._rgb
 
-    def disconnect(self):
-        self._dev.disconnect()
-
-    def wait_for_notifications(self):
-        while True:
-            self._dev.wait(1)
+    @property
+    def state_data(self):
+        return {
+            "color": self.color,
+            "ct": self.temperature,
+            "brightness": self.brightness,
+            "mode": self.mode,
+            "is_on": self.is_on,
+            "status": "on" if self.is_on else "off"
+        }
 
     @cmd
     def pair(self):
         return "Pair"
-
-    def wait(self, sec):
-        end = time.time() + sec
-        while time.time() < end:
-            self._dev.wait(0.1)
-
-    @property
-    def is_on(self):
-        return self._is_on
 
     @cmd
     def turn_on(self):
@@ -141,7 +121,7 @@ class Lamp:
 
     @cmd
     def get_name(self):
-        return "GetName", {"wait": 0.5}
+        return "GetName"
 
     @cmd
     def get_scene(self, scene_id):
@@ -158,6 +138,34 @@ class Lamp:
     @cmd
     def get_serial_number(self):
         return "GetSerialNumber"
+
+    @cmd
+    def set_temperature(self, kelvin: int, brightness: int):
+        return "SetTemperature", {"temperature": kelvin, "brightness": brightness}
+
+    @cmd
+    def set_brightness(self, brightness: int):
+        return "SetBrightness", {"brightness": brightness}
+
+    @cmd
+    def set_color(self, red: int, green: int, blue: int, brightness: int):
+        return "SetColor", {"red": red, "green": green, "blue": blue, "brightness": brightness}
+
+    @cmd
+    def state(self) -> StateResult:
+        return "GetState"
+
+    @cmd
+    def get_alarm(self, number):
+        return "GetAlarm", {"id": number, "wait": 0.5}
+
+    @cmd
+    def get_flow(self, number):
+        return "GetSimpleFlow", {"id": number, "wait": 0.5}
+
+    @cmd
+    def get_sleep(self):
+        return "GetSleepTimer"
 
     @cmd
     def get_time(self):
@@ -178,61 +186,6 @@ class Lamp:
     @cmd
     def get_wakeup(self):
         return "GetWakeUp"
-
-    @cmd
-    def get_night_mode(self):
-        return "GetNightMode"
-
-    @property
-    def temperature(self):
-        return self._temperature
-
-    @cmd
-    def set_temperature(self, kelvin: int, brightness: int):
-        return "SetTemperature", {"temperature": kelvin, "brightness": brightness}
-
-    @property
-    def brightness(self):
-        return self._brightness
-
-    @cmd
-    def set_brightness(self, brightness: int):
-        return "SetBrightness", {"brightness": brightness}
-
-    @property
-    def color(self):
-        return self._rgb
-
-    @cmd
-    def set_color(self, red: int, green: int, blue: int, brightness: int):
-        return "SetColor", {"red": red, "green": green, "blue": blue, "brightness": brightness}
-
-    @cmd
-    def state(self) -> StateResult:
-        return "GetState", {"wait": 0.5}
-
-    @property
-    def state_data(self):
-        return {
-            "color": self.color,
-            "ct": self.temperature,
-            "brightness": self.brightness,
-            "mode": self.mode,
-            "is_on": self.is_on,
-            "status": "on" if self.is_on else "off"
-        }
-
-    @cmd
-    def get_alarm(self, number):
-        return "GetAlarm", {"id": number, "wait": 0.5}
-
-    @cmd
-    def get_flow(self, number):
-        return "GetSimpleFlow", {"id": number, "wait": 0.5}
-
-    @cmd
-    def get_sleep(self):
-        return "GetSleepTimer", {"wait": 0.5}
 
     def __enter__(self):
         self._lock.acquire()

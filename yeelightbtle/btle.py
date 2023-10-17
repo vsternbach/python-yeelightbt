@@ -2,10 +2,7 @@ import logging
 import codecs
 import time
 import click
-from retry import retry
 from bluepy.btle import Scanner, DefaultDelegate, BTLEException, Peripheral, Debugging, BTLEDisconnectError
-
-DEFAULT_TIMEOUT = 3
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,19 +35,14 @@ class BTLEPeripheral(DefaultDelegate):
         self._peripheral = Peripheral().withDelegate(self)
         self._mac = mac
         self._callbacks = {}
-        self.connected = False
 
-    @retry(BTLEException, tries=3, delay=1)
     def connect(self):
         _LOGGER.info("Trying to connect to %s", self._mac)
         self._peripheral.connect(self._mac)
         _LOGGER.info("Connected to %s", self._mac)
-        self.connected = True
 
     def disconnect(self):
-        if self._peripheral:
-            self._peripheral.disconnect()
-            self._peripheral = None
+        self._peripheral.disconnect()
 
     def wait(self, sec):
         end = time.time() + sec
@@ -61,10 +53,8 @@ class BTLEPeripheral(DefaultDelegate):
         return self._peripheral.getServices()
 
     def get_characteristics(self, uuid=None):
-        if uuid:
-            _LOGGER.info("Requesting characteristics for uuid %s", uuid)
-            return self._peripheral.getCharacteristics(uuid=uuid)
-        return self._peripheral.getCharacteristics()
+        _LOGGER.info("Requesting characteristics for uuid %s", uuid)
+        return self._peripheral.getCharacteristics(uuid=uuid)
 
     # implements DefaultDelegate handleNotification method
     def handleNotification(self, handle, data):
@@ -75,7 +65,6 @@ class BTLEPeripheral(DefaultDelegate):
 
     @property
     def mac(self):
-        """Return the MAC address of the connected device."""
         return self._mac
 
     def set_callback(self, handle, function):
@@ -84,19 +73,7 @@ class BTLEPeripheral(DefaultDelegate):
 
     def write_characteristic(self, handle, value, timeout=0, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
-        _ex = None
-        retries = 3
-        while retries > 0:
-            try:
-                _LOGGER.debug("Writing %s to %s with retries %s", codecs.encode(value, 'hex'), handle, retries)
-                res = self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)
-                if timeout:
-                    self.wait(timeout)
-                return res
-            # except BTLEDisconnectError as ex:
-            except BTLEException as ex:
-                _LOGGER.debug("BTLE is disconnected, reconnecting")
-                _ex = ex
-                retries -= 1
-                self.connect()
-
+        _LOGGER.debug("Writing %s to %s", codecs.encode(value, 'hex'), handle)
+        self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)
+        if timeout:
+            self.wait(timeout)

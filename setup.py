@@ -25,7 +25,7 @@ setup(
     packages=['yeelightbtle'],
 
     python_requires='>=3.4',
-    install_requires=['bluepy', 'construct==2.9.52', 'click', 'redis', 'retry'],
+    install_requires=['bluepy', 'construct==2.9.52', 'click', 'redis', 'retry', 'functools'],
     entry_points={
         'console_scripts': [
             'yeelightbtle=yeelightbtle.cli:cli',
