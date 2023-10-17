@@ -40,6 +40,7 @@ class BTLEPeripheral(DefaultDelegate):
         self._callbacks = {}
         self.connected = False
 
+    @retry(BTLEException, tries=3, delay=1)
     def connect(self):
         _LOGGER.info("Trying to connect to %s", self._mac)
         self._peripheral.connect(self._mac)
