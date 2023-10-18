@@ -36,8 +36,6 @@ def message_handler(proxy_service, message):
 
 
 def run():
-    # daemon = Daemon()
-    # daemon.start()
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
     proxy_service = ProxyService(message_service)

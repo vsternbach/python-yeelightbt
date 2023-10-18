@@ -32,8 +32,8 @@ class ProxyService:
         # elif command.type == CommandType.SetMode:
         #     lamp.set_scene(command.payload)
         elif command.type == CommandType.GetState:
-            # Publish the current state straight away
-            self._message_service.publish_state(uuid)
+            # # Publish the current state straight away
+            # self._message_service.publish_state(uuid)
             # And get a new state from lamp
             lamp.state()
         else:

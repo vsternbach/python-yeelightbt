@@ -30,8 +30,8 @@ class MessageService:
 
     def publish_state(self, uuid, state=None):
         logging.debug(f'message: publish_state {state} for {uuid}')
-        if not state:
-            state = self.get_state(uuid)
+        # if not state:
+        #     state = self.get_state(uuid)
         message = json.dumps({"uuid": uuid, "state": state})
         self.redis_client.publish(self.state_channel, message)
 
@@ -43,15 +43,15 @@ class MessageService:
                 callback(json.loads(message['data']))
 
     def update_state(self, uuid, state):
-        logging.debug('message: Previous state: %s' % self.get_state(uuid))
+        # logging.debug('message: Previous state: %s' % self.get_state(uuid))
         state_key = self.state_key(uuid)
         logging.debug('message: New state: %s' % state)
-        self.redis_client.set(state_key, json.dumps(state))
+        # self.redis_client.set(state_key, json.dumps(state))
         self.publish_state(uuid, state)
 
-    def get_state(self, uuid):
-        state_json = self.redis_client.get(self.state_key(uuid))
-        if state_json:
-            return json.loads(state_json)
-        else:
-            return {}
+    # def get_state(self, uuid):
+    #     state_json = self.redis_client.get(self.state_key(uuid))
+    #     if state_json:
+    #         return json.loads(state_json)
+    #     else:
+    #         return {}
