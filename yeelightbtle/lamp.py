@@ -102,10 +102,11 @@ class Lamp:
 
     @property
     def state_data(self):
+        logging.debug(f'lamp: state_data <mode: ${self.mode}>, ct: ${self.temperature}>, brightness: ${self.brightness}>, color: ${self.color}>, on: ${self.is_on}>, ')
         return {
             "color": self.color,
             "ct": self.temperature,
-            "brightness": self.mode if self.mode > 0 else self.brightness,
+            "brightness": self.mode if int(self.mode) > 0 else self.brightness,
             "mode": self.mode,
             "on": self.is_on
         }
