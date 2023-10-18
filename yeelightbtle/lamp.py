@@ -13,13 +13,13 @@ from .structures import Request, Response, StateResult
 def cmd(command):
     @wraps(command)
     def wrapped(self, *args, **kwargs):
-        logging.debug(f"@cmd ${command.__name__} was called")
+        logging.debug(f"@cmd {command.__name__} was called")
         res = command(self, *args, **kwargs)
         obj = {"type": res}
         if isinstance(res, tuple):
             obj["type"] = res[0]
             obj["payload"] = res[1]
-        logging.debug(f"@cmd ${command.__name__}: ${obj}")
+        logging.debug(f"@cmd {command.__name__}: ${obj}")
         self.update(Request.build(obj))
 
     return wrapped
@@ -102,7 +102,7 @@ class Lamp:
 
     @property
     def state_data(self):
-        logging.debug(f'lamp: state_data <mode: ${self.mode}>, ct: ${self.temperature}>, brightness: ${self.brightness}>, color: ${self.color}>, on: ${self.is_on}>, ')
+        logging.debug(f'lamp: state_data <mode: {self.mode}>, ct: {self.temperature}>, brightness: {self.brightness}>, color: {self.color}>, on: {self.is_on}>, ')
         return {
             "color": self.color,
             "ct": self.temperature,
@@ -217,7 +217,7 @@ class Lamp:
         logging.debug('lamp: notify_cb')
         logging.debug("<< %s", codecs.encode(data, 'hex'))
         res = Response.parse(data)
-        logging.debug(f'lamp: notify_cb data: ${res}')
+        logging.debug(f'lamp: notify_cb data: {res}')
         payload = res.payload
         if res.type == "StateResult":
             self._is_on = payload.state

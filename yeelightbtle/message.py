@@ -23,13 +23,13 @@ class MessageService:
         self.state_channel = state_channel
         self.state_key_prefix = state_key_prefix
         for key in redis_client.scan_iter():
-            logging.debug(f"${key}: ${self.redis_client.get(key)}")
+            logging.debug(f"{key}: {self.redis_client.get(key)}")
 
     def state_key(self, uuid):
         return f"{self.state_key_prefix}:{uuid}"
 
     def publish_state(self, uuid, state=None):
-        logging.debug(f'message: publish_state ${state} for ${uuid}')
+        logging.debug(f'message: publish_state {state} for {uuid}')
         if not state:
             state = self.get_state(uuid)
         message = json.dumps({"uuid": uuid, "state": state})

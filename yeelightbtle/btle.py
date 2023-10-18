@@ -72,7 +72,7 @@ class BTLEPeripheral(DefaultDelegate):
         self._callbacks[handle] = function
 
     # need timeout, otherwise does not respond
-    def write_characteristic(self, handle, value, timeout=0.2, with_response=False):
+    def write_characteristic(self, handle, value, timeout=0.1, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
         logging.debug("Writing %s to %s", codecs.encode(value, 'hex'), handle)
         self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)

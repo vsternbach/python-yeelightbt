@@ -14,7 +14,7 @@ class ProxyService:
         self._message_service = message_service
 
     def cmd(self, uuid, command: Command):
-        logging.info(f"Proxy cmd: ${command} for ${uuid}")
+        logging.info(f"Proxy cmd: {command} for {uuid}")
         key = uuid.lower()
         if key not in self._lamps:
             logging.info('New Lamp')
@@ -41,7 +41,7 @@ class ProxyService:
             return
 
     def paired_cb(self, uuid, data):
-        logging.debug(f'paired_cb for ${uuid} with data: ${data}')
+        logging.debug(f'paired_cb for {uuid} with data: {data}')
         data = data.payload
         if data.pairing_status == "PairRequest":
             logging.info("Waiting for pairing, please push the button/change the brightness")
