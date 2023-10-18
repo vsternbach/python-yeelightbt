@@ -45,14 +45,14 @@ class Lamp:
         self._temperature = None
         self._rgb = None
         self._mode = None
+        self._dev = BTLEPeripheral(mac)
+        self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
 
     @retry(BTLEException, tries=3, delay=1)
     def connect(self):
         logging.debug('lamp: connect')
-        self._dev = BTLEPeripheral(self._mac)
-        self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
         self._dev.connect()
-        self.pair()
+        # self.pair()
         # self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
         # self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00))
 
