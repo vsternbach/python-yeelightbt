@@ -52,6 +52,7 @@ class Lamp:
     def connect(self):
         logging.debug('lamp: connect')
         self._dev.connect()
+        self.pair()
         # self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
         # self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00))
 
@@ -67,7 +68,7 @@ class Lamp:
                 self._dev.write_characteristic(self.CONTROL_HANDLE, data)
                 return
             except BTLEException:
-                logging.warning("Lamp is disconnected, reconnecting")
+                logging.warning("lamp: Lamp is disconnected, reconnecting")
                 tries -= 1
                 self.connect()
 
@@ -112,6 +113,7 @@ class Lamp:
 
     @cmd
     def pair(self):
+        logging.debug('lamp: pair')
         return "Pair"
 
     @cmd

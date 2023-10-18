@@ -1,4 +1,6 @@
 import logging
+import sys
+import time
 
 from .lamp import Lamp
 from .message import MessageService, Command, CommandType
@@ -39,6 +41,16 @@ class ProxyService:
             return
 
     def paired_cb(self, uuid, data):
+        logging.debug(f'paired_cb for ${uuid} with data: ${data}')
+        data = data.payload
+        if data.pairing_status == "PairRequest":
+            logging.info("Waiting for pairing, please push the button/change the brightness")
+            time.sleep(5)
+        elif data.pairing_status == "PairSuccess":
+            logging.info("We are paired.")
+        elif data.pairing_status == "PairFailed":
+            logging.error("Pairing failed, exiting")
+            sys.exit(-1)
         logging.info("Got paired to %s: %s" % (uuid, data))
 
     def status_cb(self, uuid, lamp: Lamp):
