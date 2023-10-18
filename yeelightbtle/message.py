@@ -1,12 +1,12 @@
 import json
 import logging
 
+
 class CommandType:
-    SetColor = 'setColor'
-    SetBrightness = 'setBrightness'
-    SetStatus = 'setStatus'
-    SetMode = 'setMode'
-    GetState = 'getState'
+    SetColor = 'color'
+    SetBrightness = 'brightness'
+    SetOn = 'on'
+    GetState = 'state'
 
 
 class Command:

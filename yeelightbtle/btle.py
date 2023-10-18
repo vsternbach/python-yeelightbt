@@ -71,7 +71,8 @@ class BTLEPeripheral(DefaultDelegate):
         """Set the callback for a Notification handle. It will be called with the parameter data, which is binary."""
         self._callbacks[handle] = function
 
-    def write_characteristic(self, handle, value, timeout=0.5, with_response=False):
+    # need timeout, otherwise does not respond
+    def write_characteristic(self, handle, value, timeout=0.2, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
         logging.debug("Writing %s to %s", codecs.encode(value, 'hex'), handle)
         self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)

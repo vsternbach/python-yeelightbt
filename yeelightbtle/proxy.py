@@ -27,10 +27,10 @@ class ProxyService:
             lamp.set_color(command.payload)
         elif command.type == CommandType.SetBrightness:
             lamp.set_brightness(command.payload)
-        elif command.type == CommandType.SetStatus:
-            lamp.turn_on(command.payload)
-        elif command.type == CommandType.SetMode:
-            lamp.set_scene(command.payload)
+        elif command.type == CommandType.SetOn:
+            lamp.set_on_off(command.payload)
+        # elif command.type == CommandType.SetMode:
+        #     lamp.set_scene(command.payload)
         elif command.type == CommandType.GetState:
             # Publish the current state straight away
             self._message_service.publish_state(uuid)

@@ -105,10 +105,9 @@ class Lamp:
         return {
             "color": self.color,
             "ct": self.temperature,
-            "brightness": self.brightness,
+            "brightness": self.mode if self.mode > 0 else self.brightness,
             "mode": self.mode,
-            "is_on": self.is_on,
-            "status": "on" if self.is_on else "off"
+            "on": self.is_on
         }
 
     @cmd
@@ -123,6 +122,10 @@ class Lamp:
     @cmd
     def turn_off(self):
         return "SetOnOff", {"state": False}
+
+    @cmd
+    def set_on_off(self, state: bool):
+        return "SetOnOff", {"state": state}
 
     @cmd
     def get_name(self):
