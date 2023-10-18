@@ -48,7 +48,7 @@ class Lamp:
         self._dev = BTLEPeripheral(mac)
         self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
 
-    @retry(BTLEException, tries=3, delay=1)
+    @retry(BTLEException, tries=3, delay=0.1)
     def connect(self):
         logging.debug('lamp: connect')
         self._dev.connect()
@@ -69,18 +69,11 @@ class Lamp:
             except BTLEException:
                 logging.warning("lamp: Lamp is disconnected, reconnecting")
                 tries -= 1
-                self.connect()
-            logging.error('lamp: failed to update after 2 tries')
-        # try:
-        #     logging.debug(f'lamp: update')
-        #     self._dev.write_characteristic(self.CONTROL_HANDLE, data)
-        #     return
-        # except BTLEException:
-        #     logging.warning("lamp: Lamp is disconnected, reconnecting")
-        #     try:
-        #         self.connect()
-        #     except BTLEException:
-        #         logging.error('lamp: failed to connect after 3 tries')
+                try:
+                    self.connect()
+                except BTLEException:
+                    logging.error('lamp: failed to connect after 3 tries')
+        logging.error('lamp: failed to update after 2 tries')
 
     def wait_for_notifications(self):
         while True:
