@@ -60,16 +60,27 @@ class Lamp:
 
     def update(self, data):
         logging.debug('lamp: update')
-        try:
-            logging.debug(f'lamp: update')
-            self._dev.write_characteristic(self.CONTROL_HANDLE, data)
-            return
-        except BTLEException:
-            logging.warning("lamp: Lamp is disconnected, reconnecting")
+        tries = 2
+        while tries > 0:
             try:
-                self.connect()
+                logging.debug(f'lamp: update tries ${tries}')
+                self._dev.write_characteristic(self.CONTROL_HANDLE, data)
+                return
             except BTLEException:
-                logging.error('lamp: failed to connect after 3 tries')
+                logging.warning("lamp: Lamp is disconnected, reconnecting")
+                tries -= 1
+                self.connect()
+            logging.error('lamp: failed to update after 2 tries')
+        # try:
+        #     logging.debug(f'lamp: update')
+        #     self._dev.write_characteristic(self.CONTROL_HANDLE, data)
+        #     return
+        # except BTLEException:
+        #     logging.warning("lamp: Lamp is disconnected, reconnecting")
+        #     try:
+        #         self.connect()
+        #     except BTLEException:
+        #         logging.error('lamp: failed to connect after 3 tries')
 
     def wait_for_notifications(self):
         while True:
