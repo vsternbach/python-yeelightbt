@@ -20,7 +20,6 @@ REDIS_HOST = 'localhost'  # config('REDIS_HOST', default='localhost')
 REDIS_PORT = 6379  # config('REDIS_PORT', default=6379)
 REDIS_CONTROL_CHANNEL = 'lamp_control'  # config('REDIS_CHANNEL', default='lamp_control')
 REDIS_STATE_CHANNEL = 'lamp_state'  # config('REDIS_CHANNEL', default='lamp_state')
-REDIS_KEY = 'lamp_state'  # config('REDIS_CHANNEL', default='lamp_state')
 
 
 def message_handler(proxy_service, message):
@@ -37,7 +36,7 @@ def message_handler(proxy_service, message):
 
 def run():
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-    message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL, REDIS_KEY)
+    message_service = MessageService(redis_client, REDIS_CONTROL_CHANNEL, REDIS_STATE_CHANNEL)
     proxy_service = ProxyService(message_service)
     message_service.subscribe_control(lambda message: message_handler(proxy_service, message))
     atexit.register(redis_client.close())
