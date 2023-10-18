@@ -4,8 +4,6 @@ import time
 import click
 from bluepy.btle import Scanner, DefaultDelegate, BTLEException, Peripheral, Debugging, BTLEDisconnectError
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class ScanDelegate(DefaultDelegate):
     def handleDiscovery(self, dev, isNewDev, isNewData):
@@ -30,6 +28,7 @@ class BTLEScanner:
 class BTLEPeripheral(DefaultDelegate):
 
     def __init__(self, mac):
+        logging.debug('btle: init')
         """Initialize the Peripheral."""
         DefaultDelegate.__init__(self)
         self._peripheral = Peripheral().withDelegate(self)
@@ -37,9 +36,9 @@ class BTLEPeripheral(DefaultDelegate):
         self._callbacks = {}
 
     def connect(self):
-        _LOGGER.info("Trying to connect to %s", self._mac)
+        logging.info("Trying to connect to %s", self._mac)
         self._peripheral.connect(self._mac)
-        _LOGGER.info("Connected to %s", self._mac)
+        logging.info("Connected to %s", self._mac)
 
     def disconnect(self):
         self._peripheral.disconnect()
@@ -53,13 +52,13 @@ class BTLEPeripheral(DefaultDelegate):
         return self._peripheral.getServices()
 
     def get_characteristics(self, uuid=None):
-        _LOGGER.info("Requesting characteristics for uuid %s", uuid)
+        logging.info("Requesting characteristics for uuid %s", uuid)
         return self._peripheral.getCharacteristics(uuid=uuid)
 
     # implements DefaultDelegate handleNotification method
     def handleNotification(self, handle, data):
         """Handle Callback from a Bluetooth (GATT) request."""
-        _LOGGER.debug("Got notification from %s: %s", handle, codecs.encode(data, 'hex'))
+        logging.debug("Got notification from %s: %s", handle, codecs.encode(data, 'hex'))
         if handle in self._callbacks:
             self._callbacks[handle](data)
 
@@ -68,12 +67,13 @@ class BTLEPeripheral(DefaultDelegate):
         return self._mac
 
     def set_callback(self, handle, function):
+        logging.debug('btle: set_callback')
         """Set the callback for a Notification handle. It will be called with the parameter data, which is binary."""
         self._callbacks[handle] = function
 
     def write_characteristic(self, handle, value, timeout=0, with_response=False):
         """Write a GATT Command without callback - not utf-8."""
-        _LOGGER.debug("Writing %s to %s", codecs.encode(value, 'hex'), handle)
+        logging.debug("Writing %s to %s", codecs.encode(value, 'hex'), handle)
         self._peripheral.writeCharacteristic(handle, value, withResponse=with_response)
         if timeout:
             self.wait(timeout)

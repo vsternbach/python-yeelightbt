@@ -9,18 +9,17 @@ from bluepy.btle import BTLEException
 from .btle import BTLEPeripheral
 from .structures import Request, Response, StateResult
 
-_LOGGER = logging.getLogger(__name__)
-
 
 def cmd(command):
     @wraps(command)
     def wrapped(self, *args, **kwargs):
+        logging.debug(f"@cmd ${command.__name__} was called")
         res = command(self, *args, **kwargs)
         obj = {"type": res}
         if isinstance(res, tuple):
             obj["type"] = res[0]
             obj["payload"] = res[1]
-        _LOGGER.debug(f"@cmd ${command.__name__}: ${obj}")
+        logging.debug(f"@cmd ${command.__name__}: ${obj}")
         self.update(Request.build(obj))
 
     return wrapped
@@ -35,6 +34,7 @@ class Lamp:
     CONTROL_UUID = "aa7d3f34-2d4f-41e0-807f-52fbf8cf7443"
 
     def __init__(self, mac, status_cb=None, paired_cb=None, keep_connection=True):
+        logging.debug('lamp: init')
         self._mac = mac
         self._paired_cb = paired_cb
         self._status_cb = status_cb
@@ -50,6 +50,7 @@ class Lamp:
 
     @retry(BTLEException, tries=3, delay=1)
     def connect(self):
+        logging.debug('lamp: connect')
         self._dev.connect()
         # self._dev.set_callback(self.NOTIFY_HANDLE, self.notify_cb)
         # self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00))
@@ -58,13 +59,15 @@ class Lamp:
         self._dev.disconnect()
 
     def update(self, data):
+        logging.debug('lamp: update')
         tries = 3
         while tries > 0:
             try:
+                logging.debug(f'lamp: update tries ${tries}')
                 self._dev.write_characteristic(self.CONTROL_HANDLE, data)
                 return
             except BTLEException:
-                _LOGGER.debug("Lamp is disconnected, reconnecting")
+                logging.warning("Lamp is disconnected, reconnecting")
                 tries -= 1
                 self.connect()
 
@@ -196,7 +199,7 @@ class Lamp:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._lock.release()
         if not self._keep_connection:
-            _LOGGER.info("not keeping the connection, disconnecting..")
+            logging.info("not keeping the connection, disconnecting..")
             self._dev.disconnect()
         return
 
@@ -205,8 +208,10 @@ class Lamp:
             self._mac, self._is_on, self._mode, self._rgb, self._brightness, self._temperature)
 
     def notify_cb(self, data):
-        _LOGGER.debug("<< %s", codecs.encode(data, 'hex'))
+        logging.debug('lamp: notify_cb')
+        logging.debug("<< %s", codecs.encode(data, 'hex'))
         res = Response.parse(data)
+        logging.debug(f'lamp: notify_cb data: ${res}')
         payload = res.payload
         if res.type == "StateResult":
             self._is_on = payload.state
@@ -214,13 +219,12 @@ class Lamp:
             self._rgb = (payload.red, payload.green, payload.blue, payload.white)
             self._brightness = payload.brightness
             self._temperature = payload.temperature
-            _LOGGER.debug(self)
             if self._status_cb:
                 self._status_cb(self)
         elif res.type == "PairingResult":
-            _LOGGER.debug("pairing res: %s", res)
+            logging.debug("pairing res: %s", res)
             if self._paired_cb:
                 self._paired_cb(res)
 
         else:
-            _LOGGER.info("Unhandled cb: %s", res)
+            logging.info("Unhandled cb: %s", res)

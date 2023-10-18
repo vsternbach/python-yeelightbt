@@ -1,3 +1,5 @@
+import logging
+
 from .lamp import Lamp
 from .message import MessageService, Command, CommandType
 
@@ -6,17 +8,18 @@ class ProxyService:
     _lamps = {}
 
     def __init__(self, message_service: MessageService):
-        print("Proxy service is on")
+        logging.info("Proxy service is on")
         self._message_service = message_service
 
     def cmd(self, uuid, command: Command):
+        logging.info(f"Proxy cmd: ${command} for ${uuid}")
         key = uuid.lower()
         if key not in self._lamps:
-            print('New Lamp')
+            logging.info('New Lamp')
             self._lamps[key] = Lamp(uuid, lambda data: self.status_cb(uuid, data),
                                     lambda data: self.paired_cb(uuid, data), keep_connection=True)
         else:
-            print('Existing Lamp')
+            logging.info('Existing Lamp')
         lamp = self._lamps[key]
         if command.type == CommandType.SetColor:
             lamp.set_color(command.payload)
@@ -32,12 +35,12 @@ class ProxyService:
             # And get a new state from lamp
             lamp.state()
         else:
-            print(f"Unsupported command type: {command.type}")
+            logging.warning(f"Unsupported command type: {command.type}")
             return
 
     def paired_cb(self, uuid, data):
-        print("Got paired to %s: %s" % (uuid, data))
+        logging.info("Got paired to %s: %s" % (uuid, data))
 
     def status_cb(self, uuid, lamp: Lamp):
-        print("Got notification from %s: %s" % (uuid, lamp))
+        logging.info("Got notification from %s: %s" % (uuid, lamp))
         self._message_service.update_state(uuid, lamp.state_data)
