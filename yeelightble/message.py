@@ -28,7 +28,7 @@ class MessageService:
     def publish_state(self, uuid, state=None):
         logger.debug(f'publish_state {state} for {uuid}')
         message = json.dumps({"uuid": uuid, "state": state})
-        self.redis_client.publish(f'{STATE_CHANNEL}:{uuid.lower()}', message)
+        self.redis_client.publish(STATE_CHANNEL, message)
 
     def subscribe_control(self, callback):
         logger.debug("subscribed callback")
