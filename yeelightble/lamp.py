@@ -19,7 +19,7 @@ def cmd(command):
         if isinstance(res, tuple):
             obj["type"] = res[0]
             obj["payload"] = res[1]
-        logging.debug(f"@cmd {command.__name__}: {obj}")
+        logging.debug(f"@cmd {command.__name__}: ${obj}")
         self.update(Request.build(obj))
 
     return wrapped
@@ -237,11 +237,8 @@ class Lamp:
         logging.debug("<< %s", codecs.encode(data, 'hex'))
         res = Response.parse(data)
         logging.debug(f'lamp: notify_cb data: {res}')
-        logging.debug(f'ResponseType: {res.type}')
         payload = res.payload
-        logging.debug(f'Payload: {payload}')
-        # if res.type == "StateResult":
-        if res.type:
+        if res.type == "StateResult":
             self._is_on = payload.state
             self._mode = payload.mode
             self._rgb = (payload.red, payload.green, payload.blue, payload.white)
@@ -249,10 +246,10 @@ class Lamp:
             self._temperature = payload.temperature
             if self._status_cb:
                 self._status_cb(self)
-        # elif res.type == "PairingResult":
-        #     logging.debug("pairing res: %s", res)
-        #     if self._paired_cb:
-        #         self._paired_cb(res)
+        elif res.type == "PairingResult":
+            logging.debug("pairing res: %s", res)
+            if self._paired_cb:
+                self._paired_cb(res)
 
         else:
             logging.info("Unhandled cb: %s", res)
