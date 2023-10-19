@@ -23,7 +23,11 @@ In case you are getting "No such file or directory" error for bluepy-helper, you
 It is also a good idea to let the helper have the capabilities for accessing the bluetooth devices without being root, e.g., by doing the following:
 
 ```
-setcap cap_net_admin,cap_net_raw+eip bluepy-helper
+sudo setcap 'cap_net_raw,cap_net_admin+eip' bluepy-helper
+```
+if you get: `Failed to set capabilities on file 'bluepy-helper' (No such file or directory)`, provide the full path to `bluepy-helper`, for example on RPI: 
+```
+sudo setcap 'cap_net_raw,cap_net_admin+eip' /usr/local/lib/python3.7/dist-packages/bluepy/bluepy-helper
 ```
 
 And then simply try if the scanning works. You can use pass '-dd' as option to the command to see the debug messages from bluepy in case it is not working.
@@ -39,7 +43,7 @@ and
 $ yeelightble [command] --help
 ```
 
-For debugging you can pass -d/--debug, adding it second time will also print out the debug from bluepy.
+For debugging, you can pass -d/--debug, adding it second time will also print out the debug from bluepy.
 
 ## Finding supported devices
 

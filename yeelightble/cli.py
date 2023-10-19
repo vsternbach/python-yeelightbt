@@ -8,7 +8,6 @@ from .lamp import Lamp
 # To allow callback debugs, just pass --debug to the tool
 DEBUG = 0
 pass_dev = click.make_pass_decorator(Lamp)
-scanner = BTLEScanner()
 
 
 def paired_cb(data):
@@ -60,17 +59,30 @@ def cli(ctx, mac, debug):
 
 
 @cli.command()
-def scan():
+@click.argument("timeout", default=5, required=False)
+def scan(timeout):
+    scanner = BTLEScanner(timeout=timeout)
     scanner.scan()
+
+
+@cli.command(name="info")
+@pass_dev
+def device_info(dev: Lamp):
+    """Returns name, hw & sw version."""
+    dev.get_name()
+    dev.get_version_info()
+    dev.get_serial_number()
+    dev.wait_for_notifications()
 
 
 @cli.command()
 @pass_dev
-def device_info(dev: Lamp):
-    """Returns hw & sw version."""
-    dev.get_name()
-    dev.get_version_info()
-    dev.get_serial_number()
+def unknown(dev: Lamp):
+    """Returns name, hw & sw version."""
+    dev.get_unknown()
+    dev.get_a2()
+    dev.get_a3()
+    dev.get_a4()
     dev.wait_for_notifications()
 
 
