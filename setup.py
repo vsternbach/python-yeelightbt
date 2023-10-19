@@ -28,9 +28,8 @@ setup(
     install_requires=['bluepy', 'construct==2.9.52', 'click', 'redis', 'retry'],
     entry_points={
         'console_scripts': [
-            'yeelightble=yeelightble.cli:cli',
-            'yeelightbled=yeelightble.daemon:run'
+            'yeelightble=yeelightble.cli:cli'
         ],
     },
-    # scripts=['install.py']
+    scripts=['systemd.py']
 )

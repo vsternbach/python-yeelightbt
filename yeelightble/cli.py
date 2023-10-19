@@ -2,6 +2,11 @@ import logging
 import click
 import sys
 import time
+import atexit
+import redis
+
+from .proxy import ProxyService
+from .message import MessageService, CommandType, Command
 from .btle import BTLEScanner
 from .lamp import Lamp
 
@@ -9,6 +14,17 @@ from .lamp import Lamp
 DEBUG = 0
 pass_dev = click.make_pass_decorator(Lamp)
 logger = logging.getLogger(__name__)
+
+
+def message_handler(proxy_service: ProxyService, message):
+    uuid, command = message.get('uuid'), message.get('command', None)
+    if uuid and command:
+        command, payload = command.get('type'), command.get('payload', None)
+        logger.info('message_handler: received message from %s: command=%s and payload=%s' % (uuid, command, payload))
+        proxy_service.cmd(uuid, Command(command, payload))
+    else:
+        logger.warning("message_handler: received invalid message:", message)
+
 
 def paired_cb(data):
     data = data.payload
@@ -36,14 +52,14 @@ def notification_cb(data):
 def cli(ctx, mac, debug):
     """ A tool to query Yeelight bedside lamp. """
     level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(format='%(asctime)s [%(name)s] [%(levelname)s] %(message)s', level=level)
+    logging.basicConfig(format='%(asctime)s %(levelname)s [%(name)s] %(message)s', level=level)
 
     # if we are scanning, we do not try to connect.
     if ctx.invoked_subcommand == "scan":
         return
 
     if ctx.invoked_subcommand is None:
-        ctx.invoke(scan)
+        ctx.invoke(daemon)
         return
 
     if mac is None:
@@ -52,6 +68,17 @@ def cli(ctx, mac, debug):
 
     lamp = Lamp(mac, notification_cb, paired_cb)
     ctx.obj = lamp
+
+
+@cli.command()
+@click.option('--redis-host', envvar="YEELIGHTBLE_REDIS_HOST", default='localhost', required=False)
+@click.option('--redis-port', envvar="YEELIGHTBLE_REDIS_PORT", default=6379, required=False)
+def daemon(host, port):
+    redis_client = redis.Redis(host=host, port=port, decode_responses=True)
+    message_service = MessageService(redis_client)
+    proxy_service = ProxyService(message_service)
+    message_service.subscribe_control(lambda message: message_handler(proxy_service, message))
+    atexit.register(redis_client.close())
 
 
 @cli.command()
@@ -186,11 +213,11 @@ def state(dev: Lamp):
     dev.state()
     dev.wait_for_notifications()
     click.echo("MAC: %s" % dev.mac)
-    # click.echo("State: %s" % dev.state())
-    # click.echo("Mode: %s" % dev.mode)
-    # click.echo("Color: %s" % (dev.color,))
-    # click.echo("Temperature: %s" % dev.temperature)
-    # click.echo("Brightness: %s" % dev.brightness)
+    click.echo("State: %s" % dev.state())
+    click.echo("Mode: %s" % dev.mode)
+    click.echo("Color: %s" % (dev.color,))
+    click.echo("Temperature: %s" % dev.temperature)
+    click.echo("Brightness: %s" % dev.brightness)
 
 
 @cli.command()

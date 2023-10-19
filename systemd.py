@@ -2,7 +2,7 @@ import subprocess
 import shutil
 import os
 
-service_file = './yeelightble.service'
+service_file = 'yeelightble.service'
 
 # Copy the service file to the systemd directory
 destination = '/etc/systemd/system/yeelightble.service'

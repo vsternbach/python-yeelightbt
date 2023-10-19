@@ -1,9 +1,9 @@
 [Unit]
-Description=YeelightBtNg Daemon Service
+Description=Yeelight BLE Daemon Service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/yeelightbled
+ExecStart=/usr/local/bin/yeelightble
 Restart=always
 
 [Install]
