@@ -31,5 +31,5 @@ setup(
             'yeelightble=yeelightble.cli:cli'
         ],
     },
-    scripts=['systemd.py']
+    # scripts=['systemd.py']
 )

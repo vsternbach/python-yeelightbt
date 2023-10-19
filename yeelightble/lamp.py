@@ -1,10 +1,11 @@
-import struct
-import codecs
 import logging
+import sys
 import time
 import threading
 from retry import retry
 from functools import wraps
+import struct
+import codecs
 from bluepy.btle import BTLEException
 from .btle import BTLEPeripheral
 from .structures import Request, Response, StateResult
@@ -26,6 +27,19 @@ def cmd(command):
     return wrapped
 
 
+def pair_cb(data):
+    data = data.payload
+    if data.pairing_status == "PairRequest":
+        logger.info("Waiting for pairing, please push the button/change the brightness")
+        time.sleep(5)
+    elif data.pairing_status == "PairSuccess":
+        logger.info("We are paired.")
+    elif data.pairing_status == "PairFailed":
+        logger.error("Pairing failed, exiting")
+        sys.exit(-1)
+    logger.info("Got paired %s" % data.pairing_status)
+
+
 class Lamp:
     CONTROL_HANDLE = 0x1f
     NOTIFY_HANDLE = 0x22
@@ -34,7 +48,7 @@ class Lamp:
     NOTIFY_UUID = "8f65073d-9f57-4aaa-afea-397d19d5bbeb"
     CONTROL_UUID = "aa7d3f34-2d4f-41e0-807f-52fbf8cf7443"
 
-    def __init__(self, mac, status_cb=None, paired_cb=None, keep_connection=True):
+    def __init__(self, mac, status_cb=None, paired_cb=pair_cb, keep_connection=True):
         self._mac = mac
         self._paired_cb = paired_cb
         self._status_cb = status_cb

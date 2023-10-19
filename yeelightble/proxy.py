@@ -1,7 +1,4 @@
 import logging
-import sys
-import time
-
 from .lamp import Lamp
 from .message import MessageService, Command, CommandType
 
@@ -9,18 +6,15 @@ logger = logging.getLogger(__name__)
 
 
 class ProxyService:
-
     def __init__(self, message_service: MessageService):
-        logger.info("Proxy service is on")
         self._message_service = message_service
         self._lamps = {}
 
     def cmd(self, uuid, command: Command):
-        logger.info(f"Proxy cmd: {command} for {uuid}")
+        logger.debug(f'{command} for {uuid}')
         key = uuid.lower()
         if key not in self._lamps:
-            logger.info('New Lamp')
-            self._lamps[key] = Lamp(uuid, lambda data: self.state_cb(uuid, data), lambda data: self.pair_cb(uuid, data))
+            self._lamps[key] = Lamp(uuid, lambda data: self.state_cb(uuid, data))
         lamp = self._lamps[key]
         if command.type == CommandType.SetColor:
             lamp.set_color(command.payload)
@@ -34,19 +28,6 @@ class ProxyService:
             logger.warning(f"Unsupported command type: {command.type}")
             return
 
-    def pair_cb(self, uuid, data):
-        logger.debug(f'paired_cb for {uuid} with data: {data}')
-        data = data.payload
-        if data.pairing_status == "PairRequest":
-            logger.info("Waiting for pairing, please push the button/change the brightness")
-            time.sleep(5)
-        elif data.pairing_status == "PairSuccess":
-            logger.info("We are paired.")
-        elif data.pairing_status == "PairFailed":
-            logger.error("Pairing failed, exiting")
-            sys.exit(-1)
-        logger.info("Got paired to %s: %s" % (uuid, data))
-
     def state_cb(self, uuid, lamp: Lamp):
-        logger.info("Got notification from %s: %s" % (uuid, lamp))
+        logger.debug("Got notification from %s: %s" % (uuid, lamp))
         self._message_service.update_state(uuid, lamp.state_data)

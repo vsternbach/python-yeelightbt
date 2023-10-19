@@ -21,10 +21,9 @@ class Command:
 
 
 class MessageService:
-    def __init__(self, redis_client, control_channel, state_channel):
+    def __init__(self, redis_client):
         self.redis_client = redis_client
         self.pubsub = self.redis_client.pubsub()
-        self.state_channel = state_channel
 
     def publish_state(self, uuid, state=None):
         logger.debug(f'publish_state {state} for {uuid}')

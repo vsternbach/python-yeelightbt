@@ -1,17 +1,14 @@
 import logging
 import click
 import sys
-import time
 import atexit
 import redis
-
+import time
 from .proxy import ProxyService
-from .message import MessageService, CommandType, Command
+from .message import MessageService, Command
 from .btle import BTLEScanner
 from .lamp import Lamp
 
-# To allow callback debugs, just pass --debug to the tool
-DEBUG = 0
 pass_dev = click.make_pass_decorator(Lamp)
 logger = logging.getLogger(__name__)
 
@@ -26,27 +23,12 @@ def message_handler(proxy_service: ProxyService, message):
         logger.warning("message_handler: received invalid message:", message)
 
 
-def paired_cb(data):
-    data = data.payload
-    if data.pairing_status == "PairRequest":
-        click.echo("Waiting for pairing, please push the button/change the brightness")
-        time.sleep(5)
-    elif data.pairing_status == "PairSuccess":
-        logger.info("We are paired.")
-    elif data.pairing_status == "PairFailed":
-        click.echo("Pairing failed, exiting")
-        sys.exit(-1)
-    if DEBUG:
-        logger.debug("Got paired? %s" % data.pairing_status)
-
-
-def notification_cb(data):
-    if DEBUG:
-        click.echo("Got notification: %s" % data)
+def status_cb(data):
+    click.echo("Got notification: %s" % data)
 
 
 @click.group(invoke_without_command=True)
-@click.option('--mac', envvar="YEELIGHTBT_MAC", required=False)
+@click.option('--mac', envvar="YEELIGHTBLE_MAC", required=False)
 @click.option('-d', '--debug', default=False, count=True)
 @click.pass_context
 def cli(ctx, mac, debug):
@@ -54,7 +36,7 @@ def cli(ctx, mac, debug):
     level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(format='%(asctime)s %(levelname)s [%(name)s] %(message)s', level=level)
 
-    # if we are scanning, we do not try to connect.
+    # if we are scanning, we do not need to connect.
     if ctx.invoked_subcommand == "scan":
         return
 
@@ -63,18 +45,18 @@ def cli(ctx, mac, debug):
         return
 
     if mac is None:
-        logger.error("mac address is missing, set YEELIGHTBT_MAC environment variable or pass --mac option")
+        logger.error("mac address is missing, set YEELIGHTBLE_MAC environment variable or pass --mac option")
         sys.exit(1)
 
-    lamp = Lamp(mac, notification_cb, paired_cb)
-    ctx.obj = lamp
+    ctx.obj = Lamp(mac, status_cb)
 
 
 @cli.command()
-@click.option('--redis-host', envvar="YEELIGHTBLE_REDIS_HOST", default='localhost', required=False)
-@click.option('--redis-port', envvar="YEELIGHTBLE_REDIS_PORT", default=6379, required=False)
-def daemon(host, port):
-    redis_client = redis.Redis(host=host, port=port, decode_responses=True)
+@click.option('--redis-host', envvar="YEELIGHTBLE_REDIS_HOST", default='localhost', show_default=True)
+@click.option('--redis-port', envvar="YEELIGHTBLE_REDIS_PORT", default=6379, show_default=True)
+def daemon(redis_host, redis_port):
+    """Starts yeelightble daemon, you shouldn't invoke it directly, but by adding yeelightble.service to systemd"""
+    redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
     message_service = MessageService(redis_client)
     proxy_service = ProxyService(message_service)
     message_service.subscribe_control(lambda message: message_handler(proxy_service, message))
