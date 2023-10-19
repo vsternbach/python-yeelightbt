@@ -199,22 +199,6 @@ class Lamp:
     def get_wakeup(self):
         return "GetWakeUp"
 
-    @cmd
-    def get_unknown(self):
-        return "Candela_unknown"
-
-    @cmd
-    def get_a2(self):
-        return "Candela_A2"
-
-    @cmd
-    def get_a3(self):
-        return "Candela_A3"
-
-    @cmd
-    def get_a4(self):
-        return "Candela_A4"
-
     def __enter__(self):
         self._lock.acquire()
         if not self._dev and self._keep_connection:
@@ -250,6 +234,5 @@ class Lamp:
             logging.debug("pairing res: %s", res)
             if self._paired_cb:
                 self._paired_cb(res)
-
         else:
-            logging.info("Unhandled cb: %s", res)
+            logging.info("Unhandled cb for %s: %s", res.type, payload)

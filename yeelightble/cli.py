@@ -8,7 +8,7 @@ from .lamp import Lamp
 # To allow callback debugs, just pass --debug to the tool
 DEBUG = 0
 pass_dev = click.make_pass_decorator(Lamp)
-
+logger = logging.getLogger(__name__)
 
 def paired_cb(data):
     data = data.payload
@@ -16,12 +16,12 @@ def paired_cb(data):
         click.echo("Waiting for pairing, please push the button/change the brightness")
         time.sleep(5)
     elif data.pairing_status == "PairSuccess":
-        logging.info("We are paired.")
+        logger.info("We are paired.")
     elif data.pairing_status == "PairFailed":
         click.echo("Pairing failed, exiting")
         sys.exit(-1)
     if DEBUG:
-        logging.debug("Got paired? %s" % data.pairing_status)
+        logger.debug("Got paired? %s" % data.pairing_status)
 
 
 def notification_cb(data):
@@ -35,10 +35,8 @@ def notification_cb(data):
 @click.pass_context
 def cli(ctx, mac, debug):
     """ A tool to query Yeelight bedside lamp. """
-    if debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(format='%(asctime)s [%(name)s] [%(levelname)s] %(message)s', level=level)
 
     # if we are scanning, we do not try to connect.
     if ctx.invoked_subcommand == "scan":
@@ -49,12 +47,10 @@ def cli(ctx, mac, debug):
         return
 
     if mac is None:
-        logging.error("You have to specify MAC address to use either by setting YEELIGHTBT_MAC environment variable or passing --mac option!")
+        logger.error("mac address is missing, set YEELIGHTBT_MAC environment variable or pass --mac option")
         sys.exit(1)
 
     lamp = Lamp(mac, notification_cb, paired_cb)
-    # lamp.connect()
-    # lamp.state()
     ctx.obj = lamp
 
 
@@ -68,21 +64,10 @@ def scan(timeout):
 @cli.command(name="info")
 @pass_dev
 def device_info(dev: Lamp):
-    """Returns name, hw & sw version."""
-    dev.get_name()
+    """Returns hw & sw version."""
     dev.get_version_info()
-    dev.get_serial_number()
     dev.wait_for_notifications()
-
-
-@cli.command()
-@pass_dev
-def unknown(dev: Lamp):
-    """Returns name, hw & sw version."""
-    dev.get_unknown()
-    dev.get_a2()
-    dev.get_a3()
-    dev.get_a4()
+    dev.get_serial_number()
     dev.wait_for_notifications()
 
 
@@ -151,6 +136,7 @@ def color(dev: Lamp, red, green, blue, brightness):
 @pass_dev
 def name(dev: Lamp):
     dev.get_name()
+    dev.wait_for_notifications()
 
 
 @cli.command()

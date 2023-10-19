@@ -5,7 +5,8 @@ import redis
 from .proxy import ProxyService
 from .message import MessageService, CommandType, Command
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s [%(name)s] [%(levelname)s] %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 # Check if the .env file exists
 # if os.path.exists('.env'):
 #     # If the .env file exists, read configuration variables from it
@@ -28,10 +29,10 @@ def message_handler(proxy_service, message):
     uuid, command = message.get('uuid'), message.get('command', None)
     if uuid and command:
         command, payload = command.get('type'), command.get('payload', None)
-        logging.info('message_handler: received message from %s: command=%s and payload=%s' % (uuid, command, payload))
+        logger.info('message_handler: received message from %s: command=%s and payload=%s' % (uuid, command, payload))
         proxy_service.cmd(uuid, Command(command, payload))
     else:
-        logging.warning("message_handler: received invalid message:", message)
+        logger.warning("message_handler: received invalid message:", message)
 
 
 def run():
