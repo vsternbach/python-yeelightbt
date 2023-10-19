@@ -1,10 +1,10 @@
-# Python library for Yeelight Bedside lamp
+# Python library for Yeelight BLE lamps
 
 This library allows controlling Yeelight's bluetooth-enabled [bedside lamp](http://www.yeelight.com/en_US/product/yeelight-ctd) and [Candela](https://www.yeelight.com/en_US/product/gingko) devices.
 
-**Note that this library is not actively maintained, however, patches are very welcome.**
+Note: this library is a fork and contains modifications of the original library to allow running it as systemd service using redis pubsub
 
-Candelas support only setting the light on and off, and adjusting the brightness.
+It is intended to run on RPI and was tested with Yeelight Candela lights only. Candelas support only setting the light on and off and adjusting the brightness.
 
 Currently supported features:
 * State
@@ -16,11 +16,11 @@ Currently supported features:
 # Installation
 
 ```
-sudo pip3 install git+https://github.com/vsternbach/yeelightbtle
+sudo pip3 install git+https://github.com/vsternbach/yeelightble
 ```
 
 In case you are getting "No such file or directory" error for bluepy-helper, you have to go into bluepy's directory and run make there.
-It is also a good idea to let the helper to have capabilities for accessing the bluetooth devices without being root, e.g., by doing the following:
+It is also a good idea to let the helper have the capabilities for accessing the bluetooth devices without being root, e.g., by doing the following:
 
 ```
 setcap cap_net_admin,cap_net_raw+eip bluepy-helper
@@ -32,11 +32,11 @@ And then simply try if the scanning works. You can use pass '-dd' as option to t
 
 Try
 ```
-$ yeelightbtle --help
+$ yeelightble --help
 ```
 and
 ```
-$ yeelightbtle [command] --help
+$ yeelightble [command] --help
 ```
 
 For debugging you can pass -d/--debug, adding it second time will also print out the debug from bluepy.
@@ -44,7 +44,7 @@ For debugging you can pass -d/--debug, adding it second time will also print out
 ## Finding supported devices
 
 ```
-$ yeelightbtle scan
+$ yeelightble scan
 Scanning for 5 seconds
 Devices found:
   f8:24:41:xx:xx:xx (XMCTD_XXXX), rssi=-83
@@ -60,7 +60,7 @@ export YEELIGHTBT_MAC=AA:BB:CC:11:22:33
 ```
 
 ```
-$ yeelightbtle
+$ yeelightble
 
 MAC: f8:24:41:xx:xx:xx
   Mode: LampMode.White
@@ -70,12 +70,12 @@ MAC: f8:24:41:xx:xx:xx
 ```
 
 ```
-$ yeelightbtle temperature
+$ yeelightble temperature
 
 Temperature: 5000
 ```
 
 ```
-$ yeelightbtle color 255 0 0
+$ yeelightble color 255 0 0
 Setting color: 255 0 0
 ```

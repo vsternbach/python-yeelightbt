@@ -53,9 +53,9 @@ def cli(ctx, mac, debug):
         logging.error("You have to specify MAC address to use either by setting YEELIGHTBT_MAC environment variable or passing --mac option!")
         sys.exit(1)
 
-    lamp = Lamp(mac, notification_cb, paired_cb, keep_connection=True, wait_after_call=0.2)
-    lamp.connect()
-    lamp.state()
+    lamp = Lamp(mac, notification_cb, paired_cb)
+    # lamp.connect()
+    # lamp.state()
     ctx.obj = lamp
 
 
@@ -66,16 +66,18 @@ def scan():
 
 @cli.command()
 @pass_dev
-def device_info(dev):
+def device_info(dev: Lamp):
     """Returns hw & sw version."""
-    vers = dev.get_version_info()
-    serial = dev.get_serial_number()
+    dev.get_name()
+    dev.get_version_info()
+    dev.get_serial_number()
+    dev.wait_for_notifications()
 
 
 @cli.command(name="time")
 @click.argument("new_time", default=None, required=False)
 @pass_dev
-def time_(dev, new_time):
+def time_(dev: Lamp, new_time):
     """Gets or sets the time."""
     if new_time:
         click.echo("Setting the time to %s" % new_time)
@@ -87,21 +89,21 @@ def time_(dev, new_time):
 
 @cli.command()
 @pass_dev
-def on(dev):
+def on(dev: Lamp):
     """ Turns the lamp on. """
     dev.turn_on()
 
 
 @cli.command()
 @pass_dev
-def off(dev):
+def off(dev: Lamp):
     """ Turns the lamp off. """
     dev.turn_off()
 
 
 @cli.command()
 @pass_dev
-def wait_for_notifications(dev):
+def wait_for_notifications(dev: Lamp):
     """Wait for notifications."""
     dev.wait_for_notifications()
 
@@ -109,7 +111,7 @@ def wait_for_notifications(dev):
 @cli.command()
 @click.argument("brightness", type=int, default=None, required=False)
 @pass_dev
-def brightness(dev, brightness):
+def brightness(dev: Lamp, brightness):
     """ Gets or sets the brightness. """
     if brightness:
         click.echo("Setting brightness to %s" % brightness)
@@ -124,7 +126,7 @@ def brightness(dev, brightness):
 @click.argument("blue", type=int, default=None, required=False)
 @click.argument("brightness", type=int, default=None, required=False)
 @pass_dev
-def color(dev, red, green, blue, brightness):
+def color(dev: Lamp, red, green, blue, brightness):
     """ Gets or sets the color. """
     if red or green or blue:
         click.echo("Setting color: %s %s %s (brightness: %s)" % (red, green, blue, brightness))
@@ -135,7 +137,7 @@ def color(dev, red, green, blue, brightness):
 
 @cli.command()
 @pass_dev
-def name(dev):
+def name(dev: Lamp):
     dev.get_name()
 
 
@@ -143,7 +145,7 @@ def name(dev):
 @click.argument("number", type=int, default=255, required=False)
 @click.argument("name", type=str, required=False)
 @pass_dev
-def scene(dev, number, name):
+def scene(dev: Lamp, number, name):
     if name:
         dev.set_scene(number, name)
     else:
@@ -153,14 +155,14 @@ def scene(dev, number, name):
 @cli.command()
 @click.argument("number", type=int, default=255, required=False)
 @pass_dev
-def alarm(dev, number):
+def alarm(dev: Lamp, number):
     """Gets alarms."""
     dev.get_alarm(number)
 
 
 @cli.command()
 @pass_dev
-def night_mode(dev):
+def night_mode(dev: Lamp):
     """Gets or sets night mode settings."""
     dev.get_nightmode()
 
@@ -168,7 +170,7 @@ def night_mode(dev):
 @cli.command()
 @click.argument("number", type=int, default=255, required=False)
 @pass_dev
-def flow(dev, number):
+def flow(dev: Lamp, number):
     dev.get_flow(number)
 
 
@@ -181,19 +183,21 @@ def sleep(dev: Lamp, time):
 
 @cli.command()
 @pass_dev
-def state(dev):
+def state(dev: Lamp):
     """ Requests the state from the device. """
+    dev.state()
+    dev.wait_for_notifications()
     click.echo("MAC: %s" % dev.mac)
-    click.echo("Status: %s" % dev.is_on)
-    click.echo("Mode: %s" % dev.mode)
-    click.echo("Color: %s" % (dev.color,))
-    click.echo("Temperature: %s" % dev.temperature)
-    click.echo("Brightness: %s" % dev.brightness)
+    # click.echo("State: %s" % dev.state())
+    # click.echo("Mode: %s" % dev.mode)
+    # click.echo("Color: %s" % (dev.color,))
+    # click.echo("Temperature: %s" % dev.temperature)
+    # click.echo("Brightness: %s" % dev.brightness)
 
 
 @cli.command()
 @pass_dev
-def mode(dev):
+def mode(dev: Lamp):
     click.echo("Mode: %s" % dev.mode)
 
 
@@ -201,7 +205,7 @@ def mode(dev):
 @click.argument('temperature', type=int, default=None, required=False)
 @click.argument('brightness', type=int, default=None, required=False)
 @pass_dev
-def temperature(dev, temperature, brightness):
+def temperature(dev: Lamp, temperature, brightness):
     """ Gets and sets the color temperature 1700-6500K """
     if temperature:
         click.echo("Setting the temperature to %s (brightness: %s)" % (temperature, brightness))

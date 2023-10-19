@@ -1,13 +1,13 @@
 from setuptools import setup
 
-with open('yeelightbtle/version.py') as f: exec(f.read())
+with open('yeelightble/version.py') as f: exec(f.read())
 
 setup(
-    name='yeelightbtle',
+    name='yeelightble',
 
     version=__version__,
     description='Python library for interfacing with yeelight\'s bt lights',
-    url='https://github.com/vsternbach/yeelightbtle',
+    url='https://github.com/vsternbach/yeelightble',
 
     author='Vlad Sternbach',
 
@@ -20,16 +20,16 @@ setup(
         'Programming Language :: Python :: 3',
     ],
 
-    keywords='yeelight bluepy',
+    keywords='yeelightble yeelight bluepy ble bluetooth candela',
 
-    packages=['yeelightbtle'],
+    packages=['yeelightble'],
 
     python_requires='>=3.4',
     install_requires=['bluepy', 'construct==2.9.52', 'click', 'redis', 'retry'],
     entry_points={
         'console_scripts': [
-            'yeelightbtle=yeelightbtle.cli:cli',
-            'yeelightbtled=yeelightbtle.daemon:run'
+            'yeelightble=yeelightble.cli:cli',
+            'yeelightbled=yeelightble.daemon:run'
         ],
     },
     # scripts=['install.py']
