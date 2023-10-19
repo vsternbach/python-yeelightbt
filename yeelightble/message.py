@@ -1,6 +1,7 @@
 import json
 import logging
 
+logger = logging.getLogger(__name__)
 
 class CommandType:
     SetColor = 'color'
@@ -23,17 +24,17 @@ class MessageService:
         self.state_channel = state_channel
 
     def publish_state(self, uuid, state=None):
-        logging.debug(f'message: publish_state {state} for {uuid}')
+        logger.debug(f'publish_state {state} for {uuid}')
         message = json.dumps({"uuid": uuid, "state": state})
         self.redis_client.publish(self.state_channel, message)
 
     def subscribe_control(self, callback):
-        logging.debug("message: subscribed callback")
+        logger.debug("subscribed callback")
         self.pubsub.subscribe(self.control_channel)
         for message in self.pubsub.listen():
             if message['type'] == 'message':
                 callback(json.loads(message['data']))
 
     def update_state(self, uuid, state):
-        logging.debug('message: New state: %s' % state)
+        logger.debug('new state: %s' % state)
         self.publish_state(uuid, state)

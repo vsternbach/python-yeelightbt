@@ -1,13 +1,10 @@
 """ This file contains the protocol structures. """
-import logging
 import datetime
 from construct import (
-    Bytes, GreedyBytes, Byte, Int16ub, Byte, BytesInteger, PascalString, 
+    Bytes, GreedyBytes, Byte, Int16ub, Byte, BytesInteger, PascalString,
     Enum, FlagsEnum, Flag, Mapping, Int8ub,
-    Struct, Embedded, EmbeddedSwitch, Const, Padded, If, Switch, 
+    Struct, Embedded, EmbeddedSwitch, Const, Padded, If, Switch,
     Pass, Default, Seek, Adapter, ExprAdapter, this, Probe)
-
-_LOGGER = logging.getLogger(__name__)
 
 # Some help from https://github.com/Marcocanc/node-mi-lamp/blob/master/notes.md
 
@@ -56,7 +53,7 @@ SerialNumber = Struct(
 #
 # YOU NEED TO ADJUST OTHER CODE THAT USES THIS FIELD ALSO.
 #
-LampMode = Enum(Byte, 
+LampMode = Enum(Byte,
     Color = 0x01,
     White = 0x02,
     Flow = 0x03,
@@ -159,7 +156,7 @@ Alarm = Struct(
     "id" / Byte, # 1-6, 6 = wake up fall sleep mode, ff = end of list
     Embedded(HourMinuteSecond),
     "mode" / Enum(Byte, Single=0x01, RepeatDaily=0x02, RepeatOnDays=0x03),
-    "days" / Switch(this.mode, 
+    "days" / Switch(this.mode,
         {
             "Single": RawAsInt(Byte), # date in BCD
             "RepeatDaily": Byte,
