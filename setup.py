@@ -1,12 +1,10 @@
 from setuptools import setup
-
-with open('yeelightble/version.py') as f: exec(f.read())
+from yeelightble.version import __version__
 
 setup(
     name='yeelightble',
-
     version=__version__,
-    description='Python library for interfacing with yeelight\'s bt lights',
+    description='Python library for interfacing with Yeelight bluetooth lights',
     url='https://github.com/vsternbach/yeelightble',
 
     author='Vlad Sternbach',
@@ -28,8 +26,8 @@ setup(
     install_requires=['bluepy', 'construct==2.9.52', 'click', 'redis', 'retry'],
     entry_points={
         'console_scripts': [
-            'yeelightble=yeelightble.cli:cli'
+            'yeelightble=yeelightble.cli:cli',
+            'postinstall_script=yeelightble.systemd:install',
         ],
     },
-    # scripts=['systemd.py']
 )
