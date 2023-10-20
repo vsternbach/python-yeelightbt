@@ -38,7 +38,7 @@ def cli(ctx, mac, debug):
     logging.basicConfig(format='%(asctime)s %(levelname)s [%(name)s] %(message)s', level=level)
 
     # if we are scanning, we do not need to connect.
-    if ctx.invoked_subcommand == "scan":
+    if ctx.invoked_subcommand in ("scan", "daemon"):
         return
 
     if ctx.invoked_subcommand is None:
@@ -56,7 +56,7 @@ def cli(ctx, mac, debug):
 @click.option('--redis-host', envvar="YEELIGHTBLE_REDIS_HOST", default='localhost', show_default=True)
 @click.option('--redis-port', envvar="YEELIGHTBLE_REDIS_PORT", default=6379, show_default=True)
 def daemon(redis_host, redis_port):
-    """Starts yeelightble daemon, you shouldn't invoke it directly, but by adding yeelightble.service to systemd"""
+    """Runs yeelightble as a daemon"""
     logger.info(f'Starting yeelightble service daemon v{__version__}')
     redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
     message_service = MessageService(redis_client)

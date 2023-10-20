@@ -241,7 +241,6 @@ class Lamp:
             self._rgb = (payload.red, payload.green, payload.blue, payload.white)
             self._brightness = payload.brightness
             self._temperature = payload.temperature
-            self._
             if self._status_cb:
                 self._status_cb(self)
         elif res.type == "PairingResult":
