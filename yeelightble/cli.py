@@ -8,6 +8,7 @@ from .proxy import ProxyService
 from .message import MessageService, Command
 from .btle import BTLEScanner
 from .lamp import Lamp
+from .version import __version__
 
 pass_dev = click.make_pass_decorator(Lamp)
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ def status_cb(data):
 @click.option('-d', '--debug', default=False, count=True)
 @click.pass_context
 def cli(ctx, mac, debug):
-    """ A tool to query Yeelight bedside lamp. """
+    """ A tool to interact with Yeelight Candela/Bedside Lamp. Will run as a daemon if no arguments were passed."""
     level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(format='%(asctime)s %(levelname)s [%(name)s] %(message)s', level=level)
 
@@ -56,6 +57,7 @@ def cli(ctx, mac, debug):
 @click.option('--redis-port', envvar="YEELIGHTBLE_REDIS_PORT", default=6379, show_default=True)
 def daemon(redis_host, redis_port):
     """Starts yeelightble daemon, you shouldn't invoke it directly, but by adding yeelightble.service to systemd"""
+    logger.info(f'Starting yeelightble service daemon v{__version__}')
     redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
     message_service = MessageService(redis_client)
     proxy_service = ProxyService(message_service)
