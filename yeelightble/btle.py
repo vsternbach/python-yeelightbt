@@ -6,22 +6,22 @@ from bluepy.btle import Scanner, DefaultDelegate, BTLEException, Peripheral, Deb
 
 logger = logging.getLogger(__name__)
 
+
 class ScanDelegate(DefaultDelegate):
     def handleDiscovery(self, dev, isNewDev, isNewData):
         if isNewDev:
             name = dev.getValueText(9)
-            click.echo("%s: %s" % (dev.addr, name))
+            click.echo("%s %s" % (dev.addr, name))
 
 
 class BTLEScanner:
     def __init__(self, timeout=5):
-        self.timeout = timeout
-        self.scanner = Scanner().withDelegate(ScanDelegate())
+        self._timeout = timeout
+        self._scanner = Scanner().withDelegate(ScanDelegate())
 
     def scan(self):
-        logger.info("Scanning for %s seconds" % self.timeout)
         try:
-            self.scanner.scan(self.timeout, passive=True)
+            self._scanner.scan(self._timeout, passive=True)
         except BTLEException as ex:
             logger.error("Unable to scan, did you set-up permissions for bluepy-helper correctly? ex: %s" % ex)
 

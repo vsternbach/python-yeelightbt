@@ -23,11 +23,11 @@ class ProxyService:
         elif command.type == CommandType.SetOn:
             lamp.set_on_off(command.payload)
         elif command.type == CommandType.GetState:
-            lamp.state()
+            lamp.get_state()
         else:
             logger.warning(f"Unsupported command type: {command.type}")
             return
 
     def state_cb(self, uuid, lamp: Lamp):
         logger.debug("Got notification from %s: %s" % (uuid, lamp))
-        self._message_service.update_state(uuid, lamp.state_data)
+        self._message_service.update_state(uuid, lamp.state)

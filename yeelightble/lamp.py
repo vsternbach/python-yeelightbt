@@ -118,7 +118,7 @@ class Lamp:
         return self._rgb
 
     @property
-    def state_data(self):
+    def state(self):
         logger.debug(f'state_data <mode: {self.mode}>, ct: {self.temperature}>, brightness: {self.brightness}>, color: {self.color}>, on: {self.is_on}>, ')
         return {
             "color": self.color,
@@ -178,7 +178,7 @@ class Lamp:
         return "SetColor", {"red": red, "green": green, "blue": blue, "brightness": brightness}
 
     @cmd
-    def state(self) -> StateResult:
+    def get_state(self) -> StateResult:
         return "GetState"
 
     @cmd
@@ -231,7 +231,6 @@ class Lamp:
             self._mac, self._is_on, self._mode, self._rgb, self._brightness, self._temperature)
 
     def notify_cb(self, data):
-        logger.debug('lamp: notify_cb')
         # logger.debug("<< %s", codecs.encode(data, 'hex'))
         res = Response.parse(data)
         logger.debug(f'notify_cb data: {res}')
@@ -242,6 +241,7 @@ class Lamp:
             self._rgb = (payload.red, payload.green, payload.blue, payload.white)
             self._brightness = payload.brightness
             self._temperature = payload.temperature
+            self._
             if self._status_cb:
                 self._status_cb(self)
         elif res.type == "PairingResult":

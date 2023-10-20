@@ -64,33 +64,21 @@ def daemon(redis_host, redis_port):
 
 
 @cli.command()
-@click.argument("timeout", default=5, required=False)
+@click.option("-t", "--timeout", default=5, required=False)
 def scan(timeout):
+    """Scan for bluetooth devices"""
     scanner = BTLEScanner(timeout=timeout)
     scanner.scan()
 
 
-@cli.command(name="info")
+@cli.command()
 @pass_dev
-def device_info(dev: Lamp):
-    """Returns hw & sw version."""
-    dev.get_version_info()
+def state(dev: Lamp):
+    """ Requests the state from the device. """
+    dev.get_state()
     dev.wait_for_notifications()
-    dev.get_serial_number()
-    dev.wait_for_notifications()
-
-
-@cli.command(name="time")
-@click.argument("new_time", default=None, required=False)
-@pass_dev
-def time_(dev: Lamp, new_time):
-    """Gets or sets the time."""
-    if new_time:
-        click.echo("Setting the time to %s" % new_time)
-        dev.set_time(new_time)
-    else:
-        click.echo("Requesting time.")
-        dev.get_time()
+    click.echo("MAC: %s" % dev.mac)
+    click.echo("State: %s" % dev.state)
 
 
 @cli.command()
@@ -105,13 +93,6 @@ def on(dev: Lamp):
 def off(dev: Lamp):
     """ Turns the lamp off. """
     dev.turn_off()
-
-
-@cli.command()
-@pass_dev
-def wait_for_notifications(dev: Lamp):
-    """Wait for notifications."""
-    dev.wait_for_notifications()
 
 
 @cli.command()
@@ -142,10 +123,52 @@ def color(dev: Lamp, red, green, blue, brightness):
 
 
 @cli.command()
+@click.argument('temperature', type=int, default=None, required=False)
+@click.argument('brightness', type=int, default=None, required=False)
+@pass_dev
+def temperature(dev: Lamp, temperature, brightness):
+    """ Gets and sets the color temperature 1700-6500K """
+    if temperature:
+        click.echo("Setting the temperature to %s (brightness: %s)" % (temperature, brightness))
+        dev.set_temperature(temperature, brightness)
+    else:
+        click.echo("Temperature: %s" % dev.temperature)
+
+
+@cli.command()
 @pass_dev
 def name(dev: Lamp):
     dev.get_name()
     dev.wait_for_notifications()
+
+
+@cli.command(name="info")
+@pass_dev
+def device_info(dev: Lamp):
+    """Returns hw & sw version."""
+    dev.get_version_info()
+    dev.get_serial_number()
+    dev.wait_for_notifications()
+
+
+@cli.command()
+@pass_dev
+def wait_for_notifications(dev: Lamp):
+    """Wait for notifications."""
+    dev.wait_for_notifications()
+
+
+@cli.command(name="time")
+@click.argument("new_time", default=None, required=False)
+@pass_dev
+def time_(dev: Lamp, new_time):
+    """Gets or sets the time."""
+    if new_time:
+        click.echo("Setting the time to %s" % new_time)
+        dev.set_time(new_time)
+    else:
+        click.echo("Requesting time.")
+        dev.get_time()
 
 
 @cli.command()
@@ -184,41 +207,14 @@ def flow(dev: Lamp, number):
 @cli.command()
 @click.argument("time", type=int, default=0, required=False)
 @pass_dev
-def sleep(dev: Lamp, time):
+def sleep(dev: Lamp):
     dev.get_sleep()
-
-
-@cli.command()
-@pass_dev
-def state(dev: Lamp):
-    """ Requests the state from the device. """
-    dev.state()
-    dev.wait_for_notifications()
-    click.echo("MAC: %s" % dev.mac)
-    click.echo("State: %s" % dev.state())
-    click.echo("Mode: %s" % dev.mode)
-    click.echo("Color: %s" % (dev.color,))
-    click.echo("Temperature: %s" % dev.temperature)
-    click.echo("Brightness: %s" % dev.brightness)
 
 
 @cli.command()
 @pass_dev
 def mode(dev: Lamp):
     click.echo("Mode: %s" % dev.mode)
-
-
-@cli.command()
-@click.argument('temperature', type=int, default=None, required=False)
-@click.argument('brightness', type=int, default=None, required=False)
-@pass_dev
-def temperature(dev: Lamp, temperature, brightness):
-    """ Gets and sets the color temperature 1700-6500K """
-    if temperature:
-        click.echo("Setting the temperature to %s (brightness: %s)" % (temperature, brightness))
-        dev.set_temperature(temperature, brightness)
-    else:
-        click.echo("Temperature: %s" % dev.temperature)
 
 
 if __name__ == "__main__":
