@@ -78,9 +78,15 @@ def scan(timeout):
 def state(dev: Lamp):
     """ Requests the state from the device. """
     dev.get_state()
+    wait_for_result_and_exit()
+
+
+@pass_dev
+def wait_for_result_and_exit(dev: Lamp):
     dev.wait_for_notifications()
     click.echo("MAC: %s" % dev.mac)
     click.echo("State: %s" % dev.state)
+    sys.exit()
 
 
 @cli.command()
@@ -141,7 +147,7 @@ def temperature(dev: Lamp, temperature, brightness):
 @pass_dev
 def name(dev: Lamp):
     dev.get_name()
-    dev.wait_for_notifications()
+    wait_for_result_and_exit()
 
 
 @cli.command(name="info")
@@ -150,14 +156,7 @@ def device_info(dev: Lamp):
     """Returns hw & sw version."""
     dev.get_version_info()
     dev.get_serial_number()
-    dev.wait_for_notifications()
-
-
-@cli.command()
-@pass_dev
-def wait_for_notifications(dev: Lamp):
-    """Wait for notifications."""
-    dev.wait_for_notifications()
+    wait_for_result_and_exit()
 
 
 @cli.command(name="time")

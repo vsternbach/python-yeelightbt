@@ -89,9 +89,9 @@ class Lamp:
                     logger.error('failed to connect after 3 tries')
         logger.error('failed to update after 2 tries')
 
-    def wait_for_notifications(self):
+    def wait_for_notifications(self, seconds=3):
         while True:
-            self._dev.wait(1)
+            self._dev.wait(seconds)
 
     @property
     def mac(self):
