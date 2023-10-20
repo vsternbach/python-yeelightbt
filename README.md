@@ -13,12 +13,21 @@ Currently supported features:
 * Brightness
 * Sleep, wakeup & scheduling (partially)
 
+# Prerequisite
+You need to have redis server installed and running
+```
+sudo apt install redis-server
+sudo systemctl start redis.service
+sudo systemctl status redis.service
+```
 # Installation
-
 ```
 sudo pip3 install git+https://github.com/vsternbach/yeelightble
 ```
-
+To install it as a systemd service, run:
+```
+curl -sSL https://github.com/vsternbach/yeelightble/raw/master/install-service.sh | sudo sh
+```
 In case you are getting "No such file or directory" error for bluepy-helper, you have to go into bluepy's directory and run make there.
 It is also a good idea to let the helper have the capabilities for accessing the bluetooth devices without being root, e.g., by doing the following:
 
