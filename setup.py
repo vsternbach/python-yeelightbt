@@ -27,7 +27,6 @@ setup(
     entry_points={
         'console_scripts': [
             'yeelightble=yeelightble.cli:cli',
-            'postinstall_script=yeelightble.systemd:install',
         ],
     },
 )
