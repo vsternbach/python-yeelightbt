@@ -37,7 +37,7 @@ def cli(ctx, mac, debug):
 
 
 @cli.command()
-@click.option('--host', envvar="YEELIGHTBLE_HOST", default='localhost', show_default=True)
+@click.option('--host', envvar="YEELIGHTBLE_HOST", default="0.0.0.0", show_default=True)
 @click.option('--port', envvar="YEELIGHTBLE_PORT", default=8765, show_default=True)
 def daemon(host, port):
     """Runs yeelightble as a daemon"""
