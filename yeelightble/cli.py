@@ -1,12 +1,11 @@
 import asyncio
-import atexit
 import logging
 import click
 import sys
 
 from .btle import BTLEScanner
 from .lamp import Lamp
-from .broker import Broker
+from .server import Server
 from .version import __version__
 
 pass_dev = click.make_pass_decorator(Lamp)
@@ -42,9 +41,8 @@ def cli(ctx, mac, debug):
 def daemon(host, port):
     """Runs yeelightble as a daemon"""
     logger.info(f'Starting yeelightble service daemon v{__version__}')
-    broker = Broker(host=host, port=port)
-    asyncio.run(broker.start())
-    # atexit.register(broker.stop())
+    server = Server(host=host, port=port)
+    asyncio.run(server.start())
 
 
 @cli.command()

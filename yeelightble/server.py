@@ -16,7 +16,7 @@ class Command:
     GetState = 'state'
 
 
-class Broker:
+class Server:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
@@ -29,7 +29,7 @@ class Broker:
         async with websockets.serve(self.handle_message, self.host, self.port):
             await asyncio.Future()
 
-    def stop(self, signum):
+    def stop(self, signum, frame):
         logger.info(f"Received {signum} signal. Cleaning up and exiting gracefully.")
         self.ws = None
         asyncio.get_event_loop().stop()
@@ -40,24 +40,24 @@ class Broker:
             async for message in websocket:
                 try:
                     message_data = json.loads(message)
+                    logger.debug(f"Received ws message: {message_data}")
                     uuid, command = message_data.get('uuid'), message_data.get('command', None)
                     if uuid and command:
                         command, payload = command.get('type'), command.get('payload', None)
-                        logger.info("Received message from %s: command=%s and payload=%s" % (uuid, command, payload))
                         self.process_command(uuid, command, payload)
                     else:
                         logger.warning("Received invalid message:", message)
                 except Exception as e:
                     logger.error(f"Error processing message: {e}")
         except websockets.exceptions.ConnectionClosed:
-            self.stop(signal.SIGABRT)
+            self.stop(signal.SIGABRT, None)
 
     def process_command(self, uuid, command: Command, payload=None):
-        logger.debug(f"Received command {command} with payload {payload} for {uuid}")
-        key = uuid.lower()
-        if key not in self._lamps:
-            self._lamps[key] = Lamp(uuid, lambda data: self.status_cb(uuid, data))
-        lamp = self._lamps[key]
+        logger.debug(f"Process command {command} with payload {payload} for {uuid}")
+        uuid = uuid.lower()
+        if uuid not in self._lamps:
+            self._lamps[uuid] = Lamp(uuid, lambda data: self.send_state(uuid, data))
+        lamp = self._lamps[uuid]
         if command == Command.SetColor:
             lamp.set_color(payload)
         elif command == Command.SetBrightness:
@@ -70,14 +70,11 @@ class Broker:
             logger.warning(f"Unsupported command: {command}")
             return
 
-    def status_cb(self, uuid, lamp: Lamp):
-        logger.debug("Got notification from %s: %s" % (uuid, lamp))
-        self.send_state(uuid, lamp.state)
-
-    async def send_state(self, uuid, state=None):
-        logger.debug(f"send_state {state} for {uuid}")
+    async def send_state(self, uuid, lamp: Lamp):
+        logger.debug("Received notification from %s" % uuid)
         if self.ws:
-            await self.ws.send(json.dumps({"uuid": uuid, "state": state}))
+            logger.debug("Send ws message with state: %s" % (uuid, lamp.state))
+            await self.ws.send(json.dumps({"uuid": uuid, "state": lamp.state}))
         else:
             logger.warning("No open websocket")
 
