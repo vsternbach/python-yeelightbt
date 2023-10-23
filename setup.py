@@ -23,7 +23,7 @@ setup(
     packages=['yeelightble'],
 
     python_requires='>=3.4',
-    install_requires=['bluepy', 'construct==2.9.52', 'click', 'redis', 'retry'],
+    install_requires=['bluepy', 'construct==2.9.52', 'click', 'websockets', 'retry'],
     entry_points={
         'console_scripts': [
             'yeelightble=yeelightble.cli:cli',
