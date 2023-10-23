@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import logging
 import click
@@ -42,7 +43,7 @@ def daemon(host, port):
     """Runs yeelightble as a daemon"""
     logger.info(f'Starting yeelightble service daemon v{__version__}')
     broker = Broker(host=host, port=port)
-    broker.start()
+    asyncio.run(broker.start())
     # atexit.register(broker.stop())
 
 
