@@ -1,31 +1,15 @@
+import asyncio
 import logging
 import click
 import sys
-import atexit
-import redis
-import time
-from .proxy import ProxyService
-from .message import MessageService, Command
+
 from .btle import BTLEScanner
 from .lamp import Lamp
+from .server import Server
 from .version import __version__
 
 pass_dev = click.make_pass_decorator(Lamp)
 logger = logging.getLogger(__name__)
-
-
-def message_handler(proxy_service: ProxyService, message):
-    uuid, command = message.get('uuid'), message.get('command', None)
-    if uuid and command:
-        command, payload = command.get('type'), command.get('payload', None)
-        logger.info('message_handler: received message from %s: command=%s and payload=%s' % (uuid, command, payload))
-        proxy_service.cmd(uuid, Command(command, payload))
-    else:
-        logger.warning("message_handler: received invalid message:", message)
-
-
-def status_cb(data):
-    click.echo("Got notification: %s" % data)
 
 
 @click.group(invoke_without_command=True)
@@ -36,7 +20,6 @@ def cli(ctx, mac, debug):
     """ A tool to interact with Yeelight Candela/Bedside Lamp. Will run as a daemon if no arguments were passed."""
     level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(format='%(asctime)s %(levelname)s [%(name)s] %(message)s', level=level)
-
     # if we are scanning, we do not need to connect.
     if ctx.invoked_subcommand in ("scan", "daemon"):
         return
@@ -49,20 +32,17 @@ def cli(ctx, mac, debug):
         logger.error("mac address is missing, set YEELIGHTBLE_MAC environment variable or pass --mac option")
         sys.exit(1)
 
-    ctx.obj = Lamp(mac, status_cb)
+    ctx.obj = Lamp(mac)
 
 
 @cli.command()
-@click.option('--redis-host', envvar="YEELIGHTBLE_REDIS_HOST", default='localhost', show_default=True)
-@click.option('--redis-port', envvar="YEELIGHTBLE_REDIS_PORT", default=6379, show_default=True)
-def daemon(redis_host, redis_port):
+@click.option('--host', envvar="YEELIGHTBLE_HOST", default="0.0.0.0", show_default=True)
+@click.option('--port', envvar="YEELIGHTBLE_PORT", default=8765, show_default=True)
+def daemon(host, port):
     """Runs yeelightble as a daemon"""
     logger.info(f'Starting yeelightble service daemon v{__version__}')
-    redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
-    message_service = MessageService(redis_client)
-    proxy_service = ProxyService(message_service)
-    message_service.subscribe_control(lambda message: message_handler(proxy_service, message))
-    atexit.register(redis_client.close())
+    server = Server(host=host, port=port)
+    asyncio.run(server.start())
 
 
 @cli.command()
