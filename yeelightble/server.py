@@ -5,6 +5,7 @@ import signal
 import websockets
 
 from .lamp import Lamp
+from .utils import throttle
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,7 @@ class Server:
         except websockets.exceptions.ConnectionClosed:
             self.stop(signal.SIGABRT, None)
 
+    @throttle()
     def process_command(self, uuid, command: Command, payload=None):
         logger.debug(f"Process command {command} with payload {payload} for {uuid}")
         uuid = uuid.lower()
