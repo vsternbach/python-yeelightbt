@@ -17,22 +17,21 @@ class Command:
 
 
 class Server:
-    def __init__(self, host: str, port: int):
-        self.host = host
-        self.port = port
-        self.ws = None
+    def __init__(self):
         self._lamps = {}
+        self.ws = None
+        self.server = None
 
-    async def start(self):
+    async def start(self, host: str, port: int):
         signal.signal(signal.SIGINT, self.stop)
         signal.signal(signal.SIGTERM, self.stop)
-        async with websockets.serve(self.handle_message, self.host, self.port):
-            await asyncio.Future()
+        self.server = await websockets.serve(self.handle_message, host, port)
+        await self.server.wait_closed()
 
     def stop(self, signum, frame):
-        logger.info(f"Received {signum} signal. Cleaning up and exiting gracefully.")
-        self.ws = None
-        asyncio.get_event_loop().stop()
+        logger.info(f"Received {signum} signal")
+        if self.server:
+            self.server.close()
 
     async def handle_message(self, websocket):
         self.ws = websocket
@@ -70,11 +69,15 @@ class Server:
             logger.warning(f"Unsupported command: {command}")
             return
 
-    async def send_state(self, uuid, lamp: Lamp):
+    def send_state(self, uuid, lamp: Lamp):
         logger.debug("Received notification from %s" % uuid)
+        message = json.dumps({"uuid": uuid, "state": lamp.state})
+        asyncio.get_event_loop().create_task(self.send_message(message))
+
+    async def send_message(self, message):
         if self.ws:
-            logger.debug("Send ws message with state: %s" % (uuid, lamp.state))
-            await self.ws.send(json.dumps({"uuid": uuid, "state": lamp.state}))
+            logger.debug("Send ws message: %s" % message)
+            await self.ws.send(message)
         else:
             logger.warning("No open websocket")
 

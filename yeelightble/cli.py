@@ -41,8 +41,8 @@ def cli(ctx, mac, debug):
 def daemon(host, port):
     """Runs yeelightble as a daemon"""
     logger.info(f'Starting yeelightble service daemon v{__version__}')
-    server = Server(host=host, port=port)
-    asyncio.run(server.start())
+    server = Server()
+    asyncio.run(server.start(host=host, port=port))
 
 
 @cli.command()

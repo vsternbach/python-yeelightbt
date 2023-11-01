@@ -70,7 +70,6 @@ class Lamp:
     def connect(self):
         logger.debug('connect')
         self._dev.connect()
-        # self.pair()
         # self._dev.write_characteristic(self.REGISTER_NOTIFY_HANDLE, struct.pack("<BB", 0x01, 0x00))
 
     def disconnect(self):
