@@ -17,8 +17,11 @@ Currently supported features (Candelas support only On/Off and Brightness):
 ```
 sudo pip3 install git+https://github.com/vsternbach/yeelightble
 ```
-In case you are getting "No such file or directory" error for bluepy-helper, you have to go into bluepy's directory and run make there.
-It is also a good idea to let the helper have the capabilities for accessing the bluetooth devices without being root, e.g., by doing the following:
+Check that it's working correctly by running scan:
+```
+yeelightble scan -t 1
+```
+If you're getting an error you need to let the helper have the capabilities for accessing the bluetooth devices without being root by running the following:
 ```
 sudo setcap 'cap_net_raw,cap_net_admin+eip' bluepy-helper
 ```
@@ -26,7 +29,9 @@ if you get: `Failed to set capabilities on file 'bluepy-helper' (No such file or
 ```
 sudo setcap 'cap_net_raw,cap_net_admin+eip' /usr/local/lib/python3.7/dist-packages/bluepy/bluepy-helper
 ```
-And then simply try if the scanning works. You can use pass '-dd' as option to the command to see the debug messages from bluepy in case it is not working.
+And then try again if the scanning works.
+
+If you intend to use it with [homebridge-yeelight-ble](https://github.com/vsternbach/homebridge-yeelight-ble) you need to install it as a systemd service daemon, see [below](#service-daemon)
 
 ## Service daemon
 Running this script will install, enable and run `yeelightble` as a systemd service:
